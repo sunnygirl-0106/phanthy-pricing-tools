@@ -9,25 +9,26 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#070b15; --card:#0f1726; --ink:#eef3fc; --sub:#9aabc6; --dim:#647391;
-    --blue:#5b94ff; --blue2:#8a7bff;
-    --line:rgba(255,255,255,.07); --line2:rgba(255,255,255,.13);
+    --bg:#f4f6fb; --card:#ffffff; --ink:#1b2744; --sub:#566884; --dim:#8694ad;
+    --blue:#3b6fe0; --blue2:#7c5cff;
+    --line:rgba(22,42,80,.08); --line2:rgba(22,42,80,.14);
     --num:"Space Grotesk",-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
   }
   *{box-sizing:border-box;margin:0;padding:0;}
   html,body{height:100%;overflow:hidden;}
   body{font-family:-apple-system,BlinkMacSystemFont,"Space Grotesk","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
     color:var(--ink);display:flex;flex-direction:column;
-    background:linear-gradient(170deg,#070b15,#0a1020 55%,#080d18);
+    background:var(--bg);
     -webkit-font-smoothing:antialiased;}
 
   /* 顶部导航 */
   .topbar{flex:none;padding:14px 20px 0;position:relative;z-index:10;
-    background:linear-gradient(180deg,rgba(15,23,38,.98),rgba(15,23,38,.92));
+    background:linear-gradient(180deg,#ffffff,#fafbfe);
     border-bottom:1px solid var(--line2);
+    box-shadow:0 2px 12px -4px rgba(28,48,92,.08);
     backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);}
   .topbar h1{font-family:var(--num);font-size:20px;font-weight:600;letter-spacing:-.4px;margin-bottom:12px;
-    background:linear-gradient(96deg,#f4f8ff,#b6c6e6);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+    background:linear-gradient(96deg,#1b2744,#4a5e82);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
 
   /* 两级标签 */
   .groups{display:flex;gap:6px;}
@@ -37,10 +38,10 @@
   .tab{border:none;background:transparent;color:var(--sub);padding:8px 16px;font-size:13px;cursor:pointer;
     border-radius:10px 10px 0 0;transition:.18s;font-family:inherit;font-weight:500;white-space:nowrap;
     border:1px solid transparent;border-bottom:none;}
-  .tab:hover{color:#cfdcf2;background:rgba(255,255,255,.04);}
-  .tab.on{background:linear-gradient(180deg,rgba(91,148,255,.14),rgba(91,148,255,.04));
-    color:#fff;font-weight:600;border-color:var(--line2);
-    box-shadow:0 -2px 12px -4px rgba(91,148,255,.3);}
+  .tab:hover{color:#2a3d5e;background:rgba(59,111,224,.05);}
+  .tab.on{background:linear-gradient(180deg,rgba(59,111,224,.1),rgba(59,111,224,.03));
+    color:var(--blue);font-weight:600;border-color:var(--line2);
+    box-shadow:0 -2px 12px -4px rgba(59,111,224,.2);}
   .tab .icon{margin-right:5px;font-size:12px;}
   .divider{width:1px;background:var(--line2);margin:4px 12px;align-self:stretch;}
 
