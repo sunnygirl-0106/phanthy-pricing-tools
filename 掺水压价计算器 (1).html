@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>掺水压价计算器 · PhanthyMovie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#070b15; --card:#0f1726; --card2:#162034; --line:rgba(255,255,255,.07); --line2:rgba(255,255,255,.13);
+    --ink:#eef3fc; --sub:#9aabc6; --dim:#647391; --blue:#5b94ff; --blue2:#8a7bff; --blueDim:#2a3a63;
+    --green:#3ddc97; --greenBg:rgba(45,210,150,.13); --greenLine:rgba(45,210,150,.4);
+    --red:#ff6f81; --redBg:rgba(255,95,115,.12); --redLine:rgba(255,95,115,.36);
+    --amber:#ffc24b; --amberBg:rgba(255,190,75,.13); --amberLine:rgba(255,190,75,.36);
+    --radius:18px; --shadow:0 30px 60px -34px rgba(0,0,0,.92);
+    --num:"Space Grotesk",-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    --mono:"Space Grotesk","SF Mono",ui-monospace,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Space Grotesk","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    line-height:1.62;padding:52px 24px 70px;-webkit-font-smoothing:antialiased;font-feature-settings:"tnum" 1,"cv01" 1;
+    background:
+      radial-gradient(1100px 560px at 12% -12%, rgba(91,148,255,.13), transparent 58%),
+      radial-gradient(880px 520px at 108% 2%, rgba(138,123,255,.10), transparent 56%),
+      linear-gradient(170deg,#070b15,#0a1020 55%,#080d18);
+    background-attachment:fixed;position:relative;}
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+    background-image:linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);
+    background-size:46px 46px;mask-image:radial-gradient(900px 620px at 50% 0%,#000,transparent 80%);-webkit-mask-image:radial-gradient(900px 620px at 50% 0%,#000,transparent 80%);}
+  .wrap{max-width:960px;margin:0 auto;position:relative;z-index:1;}
+  h1{font-family:var(--num);font-size:30px;margin:0 0 8px;font-weight:600;letter-spacing:-.6px;
+    background:linear-gradient(96deg,#f4f8ff,#b6c6e6);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+  .lead{color:var(--sub);font-size:14.5px;margin:0 0 30px;max-width:790px;line-height:1.62;text-wrap:pretty;}
+  .card{background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.006)),var(--card);
+    border:1px solid var(--line);border-radius:var(--radius);padding:24px;margin-bottom:20px;
+    box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.055);}
+  .card h2{font-size:12px;margin:0 0 20px;color:#a7c4ff;letter-spacing:1.4px;font-weight:600;text-transform:uppercase;
+    display:flex;align-items:center;gap:10px;}
+  .card h2::before{content:"";width:7px;height:7px;border-radius:50%;flex:none;
+    background:linear-gradient(135deg,var(--blue),var(--blue2));box-shadow:0 0 10px rgba(91,148,255,.9);}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+  @media(max-width:680px){.grid{grid-template-columns:1fr}}
+  /* knobs */
+  .knob{margin-bottom:20px;}
+  .knob:last-child{margin-bottom:0;}
+  .knob label{display:flex;justify-content:space-between;gap:12px;font-size:13px;margin-bottom:9px;}
+  .knob label .name{color:var(--ink);}
+  .knob label .val{font-family:var(--num);color:#8fb8ff;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;flex:none;}
+  .knob .hint{font-size:11px;color:var(--dim);margin-top:7px;line-height:1.5;}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:99px;
+    background:linear-gradient(90deg,var(--blue),var(--blue2));outline:none;cursor:pointer;box-shadow:0 0 0 1px rgba(255,255,255,.04) inset;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;
+    background:#fff;border:3px solid var(--blue);box-shadow:0 2px 8px rgba(0,0,0,.6),0 0 0 5px rgba(91,148,255,.14);transition:transform .15s,box-shadow .15s;}
+  input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.16);box-shadow:0 2px 10px rgba(0,0,0,.6),0 0 0 7px rgba(91,148,255,.18);}
+  input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid var(--blue);}
+  input[type=number]{width:90px;background:var(--card2);border:1px solid var(--line2);
+    color:var(--ink);border-radius:10px;padding:7px 10px;font-size:14px;text-align:right;font-family:var(--num);
+    font-variant-numeric:tabular-nums;transition:.15s;}
+  input[type=number]:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(91,148,255,.2);}
+  .numrow{display:flex;align-items:center;gap:10px;justify-content:space-between;}
+  /* formula live */
+  .formula{background:linear-gradient(180deg,#080d18,#0a1020);border:1px solid var(--line);border-radius:13px;
+    padding:15px 17px;font-family:var(--mono);font-variant-numeric:tabular-nums;
+    font-size:13.5px;margin-bottom:13px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03);}
+  .formula .lbl{color:var(--sub);font-size:12px;margin-bottom:6px;}
+  .formula .eq{color:var(--ink);}
+  .formula .plug{color:var(--amber);}
+  .formula .res{color:var(--green);font-weight:600;}
+  .formula .res.neg{color:var(--red);}
+  /* result cards */
+  .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;}
+  @media(max-width:680px){.cards{grid-template-columns:repeat(2,1fr)}}
+  .rc{background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,0)),var(--card2);border:1px solid var(--line);
+    border-radius:14px;padding:16px 12px;text-align:center;box-shadow:inset 0 1px 0 rgba(255,255,255,.05);}
+  .rc .k{font-size:11.5px;color:var(--sub);margin-bottom:8px;letter-spacing:.3px;}
+  .rc .v{font-family:var(--num);font-size:24px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-.4px;}
+  .rc .u{font-size:11px;color:var(--dim);margin-top:2px;}
+  .pos{color:var(--green);text-shadow:0 0 20px rgba(45,210,150,.35)} .negc{color:var(--red);text-shadow:0 0 20px rgba(255,95,115,.3)} .neu{color:var(--ink)}
+  /* verdict banner */
+  .verdict{border-radius:13px;padding:15px 17px;font-size:14px;margin-top:14px;font-weight:500;line-height:1.55;}
+  .verdict.win{background:linear-gradient(180deg,rgba(45,210,150,.17),rgba(45,210,150,.04));border:1px solid var(--greenLine);color:#a6f3d2;}
+  .verdict.lose{background:linear-gradient(180deg,rgba(255,95,115,.16),rgba(255,95,115,.04));border:1px solid var(--redLine);color:#ffc2c9;}
+  .verdict.warn{background:linear-gradient(180deg,rgba(255,190,75,.16),rgba(255,190,75,.04));border:1px solid var(--amberLine);color:#ffe1a6;}
+  /* number line */
+  .nl{position:relative;height:96px;margin-top:10px;}
+  .nl .track{position:absolute;top:54px;left:0;right:0;height:3px;background:rgba(255,255,255,.12);border-radius:2px;}
+  .nl .sweet{position:absolute;top:50px;height:11px;background:rgba(45,210,150,.2);
+    border:1px dashed var(--greenLine);border-radius:3px;box-shadow:0 0 18px rgba(45,210,150,.25);}
+  .nl .mk{position:absolute;top:34px;transform:translateX(-50%);text-align:center;}
+  .nl .mk .dot{width:11px;height:11px;border-radius:50%;margin:0 auto;box-shadow:0 0 8px rgba(0,0,0,.4);}
+  .nl .mk .cap{font-size:10px;color:var(--dim);white-space:nowrap;margin-top:16px;}
+  .nl .mk .num{font-family:var(--num);font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;}
+  .nl .axis{position:absolute;top:62px;left:0;right:0;display:flex;justify-content:space-between;font-size:10px;color:var(--dim);}
+  /* reverse solver */
+  .solve-out{background:linear-gradient(180deg,#080d18,#0a1020);border:1px solid var(--line);border-radius:13px;padding:20px;margin-top:14px;text-align:center;}
+  .solve-out .big{font-family:var(--num);font-size:32px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-.5px;}
+  .solve-out .cap{font-size:12px;color:var(--sub);}
+  /* explain */
+  details{border:1px solid var(--line);border-radius:13px;margin-bottom:11px;overflow:hidden;
+    background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,0)),var(--card2);}
+  summary{cursor:pointer;padding:14px 17px;font-size:14px;font-weight:600;color:#a7c4ff;list-style:none;transition:background .15s;}
+  summary:hover{background:rgba(255,255,255,.03);}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸ ";color:var(--dim);}
+  details[open] summary::before{content:"▾ ";}
+  .exp{padding:2px 17px 17px;font-size:13.5px;color:var(--ink);line-height:1.7;}
+  .exp code{background:#080d18;padding:2px 6px;border-radius:5px;font-size:12.5px;color:var(--amber);font-family:var(--mono);}
+  .exp .mono{display:block;background:#080d18;border:1px solid var(--line);border-radius:10px;
+    padding:11px 13px;font-family:var(--mono);font-size:12.5px;margin:9px 0;color:var(--ink);}
+  .tag{display:inline-block;white-space:nowrap;font-size:11px;padding:3px 10px;border-radius:99px;vertical-align:middle;font-weight:600;
+    background:linear-gradient(135deg,rgba(91,148,255,.25),rgba(138,123,255,.25));border:1px solid rgba(124,160,255,.3);color:#cfe0ff;-webkit-text-fill-color:#cfe0ff;margin-left:8px;}
+  .foot{font-size:12px;color:var(--dim);text-align:center;margin-top:12px;line-height:1.6;}
+  .segrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px;}
+  .seggrp{display:flex;flex-direction:column;gap:4px;}
+  .seggrp .lab{font-size:10.5px;color:var(--dim);letter-spacing:.3px;}
+  .seg{display:inline-flex;border:1px solid var(--line2);border-radius:9px;overflow:hidden;}
+  .seg button{border:none;background:transparent;color:var(--sub);padding:6px 11px;font-size:12.5px;cursor:pointer;transition:.15s;font-family:inherit;}
+  .seg button.on{background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;font-weight:700;}
+  .seg button:disabled{opacity:.3;cursor:not-allowed;text-decoration:line-through;}
+  .knob input:disabled{opacity:.4;cursor:not-allowed;}
+</style>
+<style id="light-skin">
+:root{
+  --bg:#eef1f7; --card:#ffffff; --card2:#f3f6fb; --ink:#16203a; --sub:#566884; --dim:#8694ad;
+  --blue:#3b6fe0; --blue2:#7c5cff;
+  --green:#12a06a; --red:#e0455e; --amber:#bb7d00;
+  --line:rgba(22,42,80,.10); --line2:rgba(22,42,80,.17);
+}
+body{ color:var(--ink);
+  background:
+    radial-gradient(1100px 560px at 12% -12%, rgba(91,148,255,.16), transparent 60%),
+    radial-gradient(880px 520px at 108% 2%, rgba(138,123,255,.13), transparent 58%),
+    linear-gradient(170deg,#eef2f9,#e6ecf6 55%,#eef1f7); }
+body::before{ background-image:linear-gradient(rgba(22,42,80,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(22,42,80,.05) 1px,transparent 1px); }
+h1{ background:linear-gradient(96deg,#1b2744,#46587b);-webkit-background-clip:text;background-clip:text; }
+.lead b{ color:#2a3a59; }
+.card{ background:#fff; box-shadow:0 20px 44px -30px rgba(28,48,92,.32),0 1px 2px rgba(28,48,92,.05),inset 0 1px 0 rgba(255,255,255,.7); }
+.card h2{ color:#2f63d8; }
+.tag{ background:linear-gradient(135deg,rgba(59,111,224,.16),rgba(124,92,255,.16));border-color:rgba(59,111,224,.34);color:#3a55a8;-webkit-text-fill-color:#3a55a8; }
+.knob label .name{ color:var(--ink); }
+.knob label .val{ color:#2f63d8; }
+input[type=number],td input{ background:#f3f6fb;color:var(--ink); }
+.formula{ background:linear-gradient(180deg,#f6f9fd,#eef3fb); }
+.formula .eq{ color:#27324d; }
+.formula .plug{ color:#b07400; }
+.derived{ background:linear-gradient(180deg,#f6f9fd,#eef3fb);color:var(--sub); }
+.derived b{ color:#2f63d8; }
+.rc{ background:linear-gradient(180deg,#fbfcff,#f3f6fc); }
+.neu{ color:var(--ink); }
+.verdict.win{ color:#0c7a50; }
+.verdict.lose{ color:#b8324c; }
+.verdict.warn{ color:#8a6200; }
+.nl .track{ background:rgba(22,42,80,.14); }
+.solve-out{ background:linear-gradient(180deg,#f6f9fd,#eef3fb); }
+details{ background:#fff; }
+summary{ color:#2f63d8; }
+summary:hover{ background:rgba(22,42,80,.03); }
+.exp{ color:var(--ink); }
+.exp code{ background:#eef3fb;color:#b07400; }
+.exp .mono{ background:#f6f9fd;color:var(--ink); }
+.foot{ color:var(--dim); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>掺水压价计算器 <span class="tag">口径A · 单点</span></h1>
+  <p class="lead">把便宜的 fast 掺进标准视频，摊低进货成本，于是同一个卖价能从"亏"变"赚"。每一步公式都跟着数字实时变——拖旋钮看它怎么动。</p>
+
+  <div class="grid">
+    <!-- 旋钮 -->
+    <div class="card">
+      <h2>① 旋钮（你能定的 + 不确定的）</h2>
+
+      <div class="knob">
+        <label><span class="name">📐 选档（成本自动从收费表载入）</span></label>
+        <div class="segrow">
+          <div class="seggrp"><span class="lab">分辨率</span><div class="seg" id="segRes">
+            <button data-v="480">480P</button><button data-v="720" class="on">720P</button><button data-v="1080">1080P</button>
+          </div></div>
+          <div class="seggrp"><span class="lab">视频输入</span><div class="seg" id="segInput">
+            <button data-v="不含" class="on">不含</button><button data-v="含">含</button>
+          </div></div>
+          <div class="seggrp"><span class="lab">档位</span><div class="seg" id="segTier">
+            <button data-v="标准" class="on">标准档</button><button data-v="fast">fast档</button>
+          </div></div>
+        </div>
+        <div class="hint" id="presetHint">报价 = 选中档成本 × 倍率。标准档可掺水压成本；fast档已是最便宜、不能再掺；1080P 没有 fast，掺不了水。</div>
+      </div>
+
+      <div class="knob">
+        <label><span class="name">视频标准成本 c_std</span><span class="val"><span id="vCstd">1.05</span> 元/秒</span></label>
+        <div class="numrow">
+          <input type="range" id="cStd" min="0.5" max="2.6" step="0.01" value="1.05">
+          <input type="number" id="cStdN" min="0" step="0.01" value="1.05">
+        </div>
+        <div class="hint">seedance2.0 720P=1.05；1080P=2.49。表里硬数据，确定。</div>
+      </div>
+
+      <div class="knob">
+        <label><span class="name">fast 成本 c_fast</span><span class="val"><span id="vCfast">0.63</span> 元/秒</span></label>
+        <div class="numrow">
+          <input type="range" id="cFast" min="0.3" max="1.2" step="0.01" value="0.63">
+          <input type="number" id="cFastN" min="0" step="0.01" value="0.63">
+        </div>
+        <div class="hint">2.0新价(0.75折)：0.63(不含视频输入)~0.378(含链路)。来源 收费汇总2.0。</div>
+      </div>
+
+      <div class="knob">
+        <label><span class="name">掺水比例 f（掺多少 fast）</span><span class="val"><span id="vF">20</span>%</span></label>
+        <div class="numrow">
+          <input type="range" id="fMix" min="0" max="100" step="1" value="20">
+          <input type="number" id="fMixN" min="0" max="100" step="1" value="20">
+        </div>
+        <div class="hint">主旋钮。客户认可掺 20% 用户无感。先按 0 算干净账，再掺。</div>
+      </div>
+
+      <div class="knob">
+        <label><span class="name">加价倍率 markup</span><span class="val"><span id="vMk">150</span>%</span></label>
+        <div class="numrow">
+          <input type="range" id="mk" min="100" max="300" step="5" value="150">
+          <input type="number" id="mkN" min="100" max="500" step="5" value="150">
+        </div>
+        <div class="hint">报价 = 选中档成本 × 倍率。标准档150%→1.575，fast档150%→0.945（老师定的官方价）。老板想多赚就拧高。</div>
+      </div>
+
+      <div class="knob">
+        <label><span class="name">→ 算出的卖价 p</span><span class="val"><span id="vP">1.575</span> 元/秒</span></label>
+        <div class="hint">自动算出 = 选中档成本 × 倍率（随①里档位走，不用手填）。</div>
+      </div>
+
+      <div class="knob">
+        <label><span class="name">竞品对标线 libtv</span><span class="val"><span id="vLib">0.86</span> 元/秒</span></label>
+        <div class="numrow">
+          <input type="range" id="pLib" min="0.5" max="1.5" step="0.01" value="0.86">
+          <input type="number" id="pLibN" min="0" step="0.01" value="0.86">
+        </div>
+        <div class="hint">libtv 720P≈0.86。只为判断"是否比它便宜"，不参与成本。</div>
+      </div>
+    </div>
+
+    <!-- 实时公式 -->
+    <div class="card">
+      <h2>② 实时公式（看着数字算）</h2>
+
+      <div class="formula">
+        <div class="lbl">① 混合成本 c = f·c_fast + (1−f)·c_std</div>
+        <div class="eq"><span class="plug" id="f1">= 0.20×0.63 + 0.80×1.05</span></div>
+        <div class="eq">= <span class="res neu" id="f1r">0.966</span> 元/秒</div>
+      </div>
+
+      <div class="formula">
+        <div class="lbl">② 每秒毛利 = p − c</div>
+        <div class="eq"><span class="plug" id="f2">= 1.575 − 0.966</span></div>
+        <div class="eq">= <span class="res" id="f2r">+0.609</span> 元/秒</div>
+      </div>
+
+      <div class="formula">
+        <div class="lbl">③ 毛利率 = 1 − c/p</div>
+        <div class="eq"><span class="plug" id="f3">= 1 − 0.966/1.575</span></div>
+        <div class="eq">= <span class="res" id="f3r">+38.7%</span></div>
+      </div>
+
+      <div class="verdict" id="verdict">…</div>
+    </div>
+  </div>
+
+  <!-- 结果卡片 + 数轴 -->
+  <div class="card">
+    <h2>③ 结果一览</h2>
+    <div class="cards">
+      <div class="rc"><div class="k">混合成本 c</div><div class="v neu" id="rcC">0.966</div><div class="u">元/秒</div></div>
+      <div class="rc"><div class="k">每秒毛利</div><div class="v" id="rcM">+0.609</div><div class="u">元/秒</div></div>
+      <div class="rc"><div class="k">毛利率</div><div class="v" id="rcMr">+38.7%</div><div class="u">每元</div></div>
+      <div class="rc"><div class="k">比 libtv</div><div class="v" id="rcLib">便宜</div><div class="u" id="rcLibU">—</div></div>
+    </div>
+
+    <div class="nl" id="numline">
+      <div class="sweet" id="sweet"></div>
+      <div class="track"></div>
+      <div class="mk" id="mkCstd"><div class="num" style="color:var(--sub)">1.05</div><div class="dot" style="background:#6b7689"></div><div class="cap">标准成本</div></div>
+      <div class="mk" id="mkC"><div class="num" style="color:var(--blue)">0.966</div><div class="dot" style="background:var(--blue)"></div><div class="cap">掺水后成本 c</div></div>
+      <div class="mk" id="mkP"><div class="num" style="color:var(--amber)">1.575</div><div class="dot" style="background:var(--amber)"></div><div class="cap">我们卖价 p</div></div>
+      <div class="mk" id="mkLib"><div class="num" style="color:var(--green)">0.86</div><div class="dot" style="background:var(--green)"></div><div class="cap">libtv</div></div>
+      <div class="axis"><span id="axL">0.50</span><span>甜区 = 成本 c &lt; 卖价 p &lt; libtv 时才"既便宜又赚"</span><span id="axR">1.60</span></div>
+    </div>
+  </div>
+
+  <!-- 反解器 -->
+  <div class="card">
+    <h2>④ 反解：在当前卖价下，想保住毛利，得掺多少水？</h2>
+    <div class="grid">
+      <div>
+        <div class="knob">
+          <label><span class="name">当前卖价 p（来自倍率）</span><span class="val"><span id="vTp">0.945</span> 元/秒</span></label>
+          <div class="hint">= fast成本 × 倍率，跟①里一致，自动同步。</div>
+        </div>
+        <div class="knob">
+          <label><span class="name">想保住的毛利率</span><span class="val"><span id="vTm">5</span>%</span></label>
+          <div class="numrow">
+            <input type="range" id="tM" min="0" max="90" step="1" value="5">
+            <input type="number" id="tMN" min="0" max="90" step="1" value="5">
+          </div>
+          <div class="hint">用 c_std / c_fast 同上面旋钮。公式：f =(c_std − p·(1−m))/(c_std − c_fast)</div>
+        </div>
+      </div>
+      <div class="solve-out">
+        <div class="cap">需要掺入 fast 的比例</div>
+        <div class="big" id="solveF">36%</div>
+        <div class="cap" id="solveNote">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 多档销量加权 -->
+  <div class="card">
+    <h2>⑤ 整盘 · 多档销量加权（老板自己填销量）</h2>
+    <p style="color:var(--sub);font-size:13px;margin:-6px 0 16px;line-height:1.6;">
+      单看一档不够。真实盘子 = <b>各分辨率利润 × 它的销量占比</b>，加权平均。
+      每档卖价都按「该档成本 × 倍率」自动算（用上面 ① 的<b>倍率</b>、<b>掺水 f</b>、<b>含/不含</b>设定），
+      你只要把估的<b>销量占比</b>填进去。公式：<span style="font-family:var(--mono)">整体每秒毛利 = Σ(占比 × 该档每秒毛利)</span>。
+    </p>
+    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+      <thead>
+        <tr style="color:var(--sub);font-size:12px;">
+          <th style="text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);">分辨率</th>
+          <th style="padding:10px 8px;border-bottom:1px solid var(--line);">销量占比 %</th>
+          <th style="padding:10px 8px;border-bottom:1px solid var(--line);">卖价 p<br><small style="color:var(--dim)">成本×倍率</small></th>
+          <th style="padding:10px 8px;border-bottom:1px solid var(--line);">真实成本 c<br><small style="color:var(--dim)">含掺水</small></th>
+          <th style="padding:10px 8px;border-bottom:1px solid var(--line);">每秒毛利</th>
+          <th style="padding:10px 8px;border-bottom:1px solid var(--line);">毛利率</th>
+        </tr>
+      </thead>
+      <tbody id="wBody"></tbody>
+      <tfoot>
+        <tr style="font-weight:700;">
+          <td style="text-align:left;padding:13px 8px;border-top:1px solid var(--line2);">整盘加权</td>
+          <td id="wSumShare" style="padding:13px 8px;border-top:1px solid var(--line2);text-align:center;">100%</td>
+          <td style="padding:13px 8px;border-top:1px solid var(--line2);text-align:center;">—</td>
+          <td style="padding:13px 8px;border-top:1px solid var(--line2);text-align:center;">—</td>
+          <td id="wSumM" style="padding:13px 8px;border-top:1px solid var(--line2);text-align:center;">—</td>
+          <td id="wSumMr" style="padding:13px 8px;border-top:1px solid var(--line2);text-align:center;">—</td>
+        </tr>
+      </tfoot>
+    </table>
+    <div id="wShareWarn" style="color:var(--amber);font-size:12px;margin-top:8px;"></div>
+    <div class="verdict" id="wVerdict" style="margin-top:14px;">…</div>
+    <div class="hint" style="margin-top:10px;color:var(--dim);font-size:11.5px;line-height:1.55;">
+      占比合计不必凑成 100%，下方会自动按权重折算。1080P 没有 fast、掺不了水，成本压不下来——它的毛利率天生比掺水档低，但只要倍率≥100% 仍是赚的。
+    </div>
+  </div>
+
+  <!-- 公式讲解 -->
+  <div class="card">
+    <h2>⑥ 公式讲解（为什么是这样）</h2>
+
+    <details open>
+      <summary>① 混合成本 c — 掺水到底省在哪</summary>
+      <div class="exp">
+        <span class="mono">c = f·c_fast + (1−f)·c_std</span>
+        视频有两种货：标准（贵，<code>c_std</code>）和 fast（便宜，<code>c_fast</code>）。按比例 <code>f</code> 掺 fast，整体进货成本就是两者的加权平均。掺得越多（f↑），c 越往 c_fast 靠、越便宜。
+        换个写法更直观：<span class="mono">c = c_std − f·(c_std − c_fast)</span>，即每多掺 1% 的水，成本就降 <code>(c_std−c_fast)/100</code>。这就是"掺水"省钱的全部来源——后台随机把一部分任务跑 fast，用户无感。
+      </div>
+    </details>
+
+    <details>
+      <summary>② 每秒毛利 & ③ 毛利率 — 同一个卖价怎么从亏变赚</summary>
+      <div class="exp">
+        <span class="mono">每秒毛利 = p − c　　毛利率 = 1 − c/p</span>
+        卖价 <code>p</code> 不变，但掺水把 <code>c</code> 压下去了，所以 <code>p−c</code> 从负变正。这就是关键：<b>不是涨价，是降成本</b>。例如纯标准成本 1.05、想卖 0.95 是亏的（0.95&lt;1.05）；掺水把成本压到 0.95 以下，同样卖 0.95 就赚了。
+      </div>
+    </details>
+
+    <details>
+      <summary>④ 甜区 — "既比 libtv 便宜，又不亏"的唯一窗口</summary>
+      <div class="exp">
+        要同时满足两件事：<br>
+        不亏 → <code>p &gt; c</code>；比竞品便宜 → <code>p &lt; libtv</code>。
+        合起来就是 <span class="mono">c &lt; p &lt; libtv(0.86)</span>。
+        <b>这个窗口只有当 c &lt; 0.86 时才存在。</b>换句话说：掺水必须把成本压到 0.86 以下，否则"又便宜又赚"这件事数学上不成立——只能二选一。数轴上那条绿色虚线区就是甜区，卖价点（黄）落在里面才算赢。
+      </div>
+    </details>
+
+    <details>
+      <summary>⑤ 反解 f — 这条最实用</summary>
+      <div class="exp">
+        已知想卖 <code>p</code>、想保住毛利率 <code>m</code>，反推要掺多少水：<br>
+        先由毛利率定成本上限：<span class="mono">c = p·(1−m)</span>
+        再由 c 反解 f（把①的第二种写法倒过来）：<span class="mono">f = (c_std − c) / (c_std − c_fast) = (c_std − p·(1−m)) / (c_std − c_fast)</span>
+        如果算出来 <b>f &gt; 100%</b>：光靠掺水做不到，得去压底价（找补贴/谈进价）；如果 <b>f &lt; 0</b>：说明不用掺水，纯标准就已经够赚。
+      </div>
+    </details>
+
+    <details>
+      <summary>⚠️ v2 更新 — fast 官方降到 0.63 后变好了多少</summary>
+      <div class="exp">
+        2.0 把 fast 成本打了 0.75 折(不含视频输入 720P:0.84 → <b>0.63</b>),所以老板之前口算的那个 0.63 现在成了官方价。掺 20% 后混合成本 c=<b>0.966</b>(旧 1.008)。<br>
+        效果:卖 0.95 的亏从每秒 5.8 分收窄到约 1.6 分;想卖 0.95 还保 5% 毛利,需要的掺水从 70% 降到约 <b>35%</b>——门槛大幅降低。想真转正,把掺水再提一点、或走含视频输入链路(c_fast=0.378)即可。<b>这台计算器的意义就是:别把旋钮焊死在乐观位,把每种可能扫一遍。</b>
+      </div>
+    </details>
+  </div>
+
+  <p class="foot">口径A·单点视角（按消费结算，不含套餐月清零/沉淀）。最终的掺水比例与卖价由佳哥拍板。</p>
+</div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  // sync slider <-> number
+  function pair(slider, num, on){
+    const s=$(slider), n=$(num);
+    s.addEventListener('input',()=>{n.value=s.value; on();});
+    n.addEventListener('input',()=>{s.value=n.value; on();});
+  }
+  const f1pct = x => (x*100).toFixed(1)+'%';
+  const f3 = x => x.toFixed(3);
+  const f2 = x => x.toFixed(2);
+
+  // 收费表(收费汇总2.0)：每秒成本，按 档位/视频输入/分辨率
+  const COST = {
+    '标准':{'不含':{'480':0.4725,'720':1.05,'1080':2.49}, '含':{'480':0.2835,'720':0.6405,'1080':1.52}},
+    'fast':{'不含':{'480':0.2835,'720':0.63,'1080':null}, '含':{'480':0.17325,'720':0.378,'1080':null}}
+  };
+  const sel={res:'720', input:'不含', tier:'标准'};
+  // 多档销量加权状态（老板填）
+  const salesMix={'480':30,'720':50,'1080':20};
+  let wRows=[];
+
+  function read(){
+    const cStd=+$('cStdN').value, cFast=+$('cFastN').value, f=(+$('fMixN').value)/100,
+          markup=(+$('mkN').value)/100, lib=+$('pLibN').value;
+    const hasFast = COST['fast'][sel.input][sel.res]!=null;
+    const tier=sel.tier;
+    const nominal = (tier==='标准') ? cStd : cFast;   // 报价基准 = 选中档的名义成本
+    const p = nominal*markup;                          // 报价 = 该档成本 × 倍率
+    let c;                                             // 真实服务成本
+    if(tier==='fast'){ c=cFast; }                      // fast档:就是fast,无掺水
+    else { c = hasFast ? (f*cFast+(1-f)*cStd) : cStd; }// 标准档:掺水混合;无fast(1080)则纯标准
+    return {cStd, cFast, f, markup, p, c, lib, tier, hasFast, nominal};
+  }
+
+  function compute(){
+    const v=read();
+    const c = v.c;                                 // ① 真实服务成本(标准掺水 / 或纯档)
+    const m = v.p - c;                             // ② 每秒毛利
+    const mr = 1 - c/v.p;                          // ③ 毛利率
+    // labels
+    $('vCstd').textContent=f2(v.cStd); $('vCfast').textContent=f2(v.cFast);
+    $('vF').textContent=Math.round(v.f*100); $('vMk').textContent=Math.round(v.markup*100);
+    $('vP').textContent=f3(v.p); $('vLib').textContent=f2(v.lib);
+
+    // formula ①(随档位自适应)
+    if(v.tier==='fast'){
+      $('f1').textContent = `= ${f2(v.cFast)}（fast档已是最便宜，无需掺水）`;
+    } else if(!v.hasFast){
+      $('f1').textContent = `= ${f2(v.cStd)}（1080P 无 fast，掺不了水）`;
+    } else {
+      $('f1').textContent = `= ${f2(v.f)}×${f2(v.cFast)} + ${f2(1-v.f)}×${f2(v.cStd)}`;
+    }
+    $('f1r').textContent = f3(c);
+    // formula ②
+    $('f2').textContent = `= ${f3(v.p)} − ${f3(c)}`;
+    const f2el=$('f2r'); f2el.textContent=(m>=0?'+':'−')+Math.abs(m).toFixed(3);
+    f2el.className = 'res '+(m>=0?'':'neg');
+    // formula ③
+    $('f3').textContent = `= 1 − ${f3(c)}/${f3(v.p)}`;
+    const f3el=$('f3r'); f3el.textContent=(mr>=0?'+':'−')+Math.abs(mr*100).toFixed(1)+'%';
+    f3el.className='res '+(mr>=0?'':'neg');
+
+    // result cards
+    $('rcC').textContent=f3(c);
+    const rcM=$('rcM'); rcM.textContent=(m>=0?'+':'−')+Math.abs(m).toFixed(3); rcM.className='v '+(m>=0?'pos':'negc');
+    const rcMr=$('rcMr'); rcMr.textContent=(mr>=0?'+':'−')+Math.abs(mr*100).toFixed(1)+'%'; rcMr.className='v '+(mr>=0?'pos':'negc');
+    const cheaper = v.p < v.lib;
+    const rcLib=$('rcLib'), rcLibU=$('rcLibU');
+    rcLib.textContent = cheaper?'便宜':'更贵';
+    rcLib.className='v '+(cheaper?'pos':'negc');
+    rcLibU.textContent = (v.p/v.lib).toFixed(2)+'× libtv';
+
+    // verdict
+    const mkpct=Math.round(v.markup*100);
+    const tag=`${sel.res}·${sel.input}·${v.tier}档`;
+    const vd=$('verdict');
+    if(m>=0 && cheaper){ vd.className='verdict win';
+      vd.innerHTML=`✅ 落在甜区：${tag} 卖 ${f3(v.p)} 既比 libtv 便宜，每秒还赚 ${m.toFixed(3)} 元（毛利率 ${(mr*100).toFixed(1)}%）。`;}
+    else if(m>=0 && !cheaper){ vd.className='verdict warn';
+      vd.innerHTML=`✅ 赚（每秒 +${m.toFixed(3)}，毛利率 ${(mr*100).toFixed(1)}%）。但 ${tag} 卖价 ${f3(v.p)} ＞ libtv ${f2(v.lib)}，比竞品贵——价格不占优。`;}
+    else if(m<0 && cheaper){ vd.className='verdict lose';
+      vd.innerHTML=`❌ 比 libtv 便宜，但每秒亏 ${Math.abs(m).toFixed(3)} 元。卖价 ${f3(v.p)} ＜ 真实成本 c=${f3(c)}——这是"故意压价打 libtv"才会出现的亏。`;}
+    else { vd.className='verdict lose';
+      vd.innerHTML=`❌ 又贵又亏：卖价 ${f3(v.p)} ＜ 真实成本 ${f3(c)}，且比 libtv 贵。<b>${tag} 加价 ${mkpct}% 仍盖不住成本——这一档要么提倍率、要么掺水、要么别卖。</b>`;}
+
+    // number line
+    drawLine(v, c);
+    // 多档销量加权（整盘）
+    renderWeighted(v);
+  }
+
+  // —— 整盘·多档销量加权 ——
+  function renderWeighted(v){
+    const body=$('wBody'); if(!body) return;
+    body.innerHTML=''; wRows=[];
+    const resList=['480','720','1080'], names={'480':'480P','720':'720P','1080':'1080P'};
+    resList.forEach(res=>{
+      const cstd=COST['标准'][sel.input][res];
+      const cfastV=COST['fast'][sel.input][res];
+      const hasFast=cfastV!=null;
+      const c = hasFast ? (v.f*cfastV+(1-v.f)*cstd) : cstd;   // 真实成本：标准档掺水；1080无fast则纯标准
+      const p = cstd*v.markup;                                // 报价 = 标准成本 × 倍率
+      const m = p-c, mr = 1-c/p;
+      wRows.push({res,m,mr});
+      const sh = salesMix[res]||0;
+      const cell='padding:10px 8px;border-bottom:1px solid var(--line);text-align:center;';
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td style="text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);font-weight:600;">${names[res]}${hasFast?'':' <small style="color:var(--dim)">无fast</small>'}</td>
+        <td style="padding:8px;border-bottom:1px solid var(--line);text-align:center;"><input data-res="${res}" type="number" value="${sh}" min="0" max="100" style="width:62px;background:var(--card2);border:1px solid var(--line2);color:var(--ink);border-radius:8px;padding:6px 8px;text-align:right;font-family:var(--num);font-variant-numeric:tabular-nums;"></td>
+        <td style="${cell}">${f3(p)}</td>
+        <td style="${cell}">${f3(c)}</td>
+        <td style="${cell}" class="${m>=0?'pos':'negc'}">${(m>=0?'+':'−')+Math.abs(m).toFixed(3)}</td>
+        <td style="${cell}" class="${mr>=0?'pos':'negc'}">${(mr>=0?'+':'−')+Math.abs(mr*100).toFixed(1)+'%'}</td>`;
+      body.appendChild(tr);
+    });
+    body.querySelectorAll('input').forEach(inp=>{
+      inp.addEventListener('input',()=>{ salesMix[inp.dataset.res]=+inp.value||0; recalcW(); });
+    });
+    recalcW();
+  }
+  function recalcW(){
+    let wM=0,wMr=0,sumSh=0;
+    wRows.forEach(r=>{ const sh=salesMix[r.res]||0; sumSh+=sh; wM+=sh*r.m; wMr+=sh*r.mr; });
+    const shFrac=sumSh/100; if(shFrac>0){ wM/=shFrac; wMr/=shFrac; }
+    $('wSumShare').textContent=sumSh+'%';
+    $('wSumM').innerHTML=`<span class="${wM>=0?'pos':'negc'}">${(wM>=0?'+':'−')+Math.abs(wM).toFixed(3)}</span>`;
+    $('wSumMr').innerHTML=`<span class="${wMr>=0?'pos':'negc'}">${(wMr>=0?'+':'−')+Math.abs(wMr*100).toFixed(1)+'%'}</span>`;
+    $('wShareWarn').textContent=(Math.round(sumSh)===100||sumSh===0)?'':`⚠️ 占比合计 ${sumSh}%≠100%，已自动按权重折算，请核对是否漏填。`;
+    const vd=$('wVerdict');
+    if(wMr>=0){ vd.className='verdict win';
+      vd.innerHTML=`✅ 整盘加权每秒毛利 +${wM.toFixed(3)} 元（毛利率 ${(wMr*100).toFixed(1)}%）。按当前销量结构与倍率，<b>整盘是赚的</b>。拖动占比看哪种结构最肥。`; }
+    else { vd.className='verdict lose';
+      vd.innerHTML=`❌ 整盘加权每秒亏 ${Math.abs(wM).toFixed(3)} 元（毛利率 ${(wMr*100).toFixed(1)}%）。当前倍率盖不住成本——提倍率、或多卖掺水档（480/720）。`; }
+  }
+
+  function drawLine(v, c){
+    const lo=0.5, hi=Math.max(1.6, v.p*1.06, v.cStd*1.06), span=hi-lo;
+    const pos = x => Math.max(0,Math.min(100,((x-lo)/span)*100));
+    $('axL').textContent=lo.toFixed(2); $('axR').textContent=hi.toFixed(2);
+    $('mkCstd').style.left=pos(v.cStd)+'%'; $('mkCstd').querySelector('.num').textContent=f2(v.cStd);
+    $('mkC').style.left=pos(c)+'%'; $('mkC').querySelector('.num').textContent=f3(c);
+    $('mkP').style.left=pos(v.p)+'%'; $('mkP').querySelector('.num').textContent=f3(v.p);
+    $('mkLib').style.left=pos(v.lib)+'%'; $('mkLib').querySelector('.num').textContent=f2(v.lib);
+    // sweet zone: c .. lib (only if c<lib)
+    const sw=$('sweet');
+    if(c < v.lib){ const a=pos(c), b=pos(v.lib); sw.style.left=a+'%'; sw.style.width=(b-a)+'%'; sw.style.display='block';}
+    else sw.style.display='none';
+  }
+
+  // reverse solver
+  function solve(){
+    const v=read();
+    const tm=(+$('tMN').value)/100;
+    const tp=v.p;                       // 用倍率算出的当前卖价
+    $('vTp').textContent=f3(tp); $('vTm').textContent=Math.round(tm*100);
+    const out=$('solveF'), note=$('solveNote');
+    if(v.tier==='fast'){ out.textContent='—'; out.style.color='var(--sub)';
+      note.innerHTML=`fast 档已是最便宜，无需掺水（每秒已赚 ${(tp-v.cFast).toFixed(3)}）。切到标准档再用此反解。`; return; }
+    if(!v.hasFast){ out.textContent='—'; out.style.color='var(--sub)';
+      note.innerHTML=`1080P 没有 fast，掺不了水。这一档想保毛利只能靠提倍率。`; return; }
+    const cTarget = tp*(1-tm);
+    const denom = v.cStd - v.cFast;
+    if(denom<=0){ out.textContent='—'; out.style.color='var(--sub)';
+      note.textContent='fast 不比标准便宜，掺水无意义（c_fast ≥ c_std）。'; return; }
+    const f = (v.cStd - cTarget)/denom;
+    if(f<0){ out.textContent='0%'; out.style.color='var(--green)';
+      note.innerHTML=`不用掺水：纯标准成本 ${f2(v.cStd)} 卖 ${f3(tp)} 已能保 ${Math.round(tm*100)}% 毛利。`; }
+    else if(f>1){ out.textContent=(f*100).toFixed(0)+'%'; out.style.color='var(--red)';
+      note.innerHTML=`❌ 超过 100%，光靠掺水做不到。要么把倍率拧高(抬卖价)，要么压 c_fast，要么谈底价。`; }
+    else { out.textContent=(f*100).toFixed(0)+'%'; out.style.color='var(--amber)';
+      note.innerHTML=`掺 ${(f*100).toFixed(0)}% fast → 成本压到 ${f3(cTarget)}，卖 ${f3(tp)} 保住 ${Math.round(tm*100)}% 毛利。`; }
+  }
+
+  // —— 选档：把档位映射到成本，并控制掺水可用性 ——
+  function setSeg(gid,val){
+    document.querySelectorAll('#'+gid+' button').forEach(b=>b.classList.toggle('on', b.dataset.v===val));
+  }
+  function applyPreset(){
+    const fastBtn = document.querySelector('#segTier button[data-v="fast"]');
+    const noFast = COST['fast'][sel.input][sel.res]==null;   // 1080P 无 fast
+    fastBtn.disabled = noFast;
+    if(noFast && sel.tier==='fast'){ sel.tier='标准'; setSeg('segTier','标准'); }
+    const cs = COST['标准'][sel.input][sel.res];
+    const cf = COST['fast'][sel.input][sel.res];
+    $('cStd').value=cs; $('cStdN').value=cs;
+    if(cf!=null){ $('cFast').value=cf; $('cFastN').value=cf; } else { $('cFast').value=cs; $('cFastN').value=cs; }
+    const mixOn = (sel.tier==='标准' && cf!=null);            // 掺水仅标准档+有fast
+    $('fMix').disabled=!mixOn; $('fMixN').disabled=!mixOn;
+    if(!mixOn){ $('fMix').value=0; $('fMixN').value=0; }
+    $('presetHint').textContent = noFast
+      ? `已选 ${sel.res} · ${sel.input}视频输入 · ${sel.tier}档。⚠️ 1080P 没有 fast，掺不了水，成本压不下来——只能靠加价。`
+      : (sel.tier==='fast'
+          ? `已选 ${sel.res} · ${sel.input}视频输入 · fast档。fast 已是最便宜、无需掺水；报价=fast成本×倍率。`
+          : `已选 ${sel.res} · ${sel.input}视频输入 · 标准档。可掺水压成本；报价=标准成本×倍率。`);
+    compute(); solve();
+  }
+  ['segRes','segInput','segTier'].forEach(gid=>{
+    document.querySelectorAll('#'+gid+' button').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        if(btn.disabled) return;
+        const key = gid==='segRes'?'res':(gid==='segInput'?'input':'tier');
+        sel[key]=btn.dataset.v; setSeg(gid,btn.dataset.v); applyPreset();
+      });
+    });
+  });
+
+  ['cStd|cStdN','cFast|cFastN','fMix|fMixN','mk|mkN','pLib|pLibN'].forEach(s=>{
+    const [a,b]=s.split('|'); pair(a,b,()=>{compute(); solve();});
+  });
+  pair('tM','tMN',solve);
+
+  applyPreset();
+})();
+</script>
+</body>
+</html>

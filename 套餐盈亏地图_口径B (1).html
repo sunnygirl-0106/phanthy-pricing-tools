@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PhanthyMovie 套餐盈亏地图 · 口径B</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#070b15; --card:#0f1726; --card2:#162034; --ink:#eef3fc; --muted:#9aabc6; --dim:#647391;
+    --video:#5b94ff; --blue2:#8a7bff; --line:rgba(255,255,255,.07); --line2:rgba(255,255,255,.13);
+    --good:#3ddc97; --bad:#ff6f81; --amber:#ffc24b;
+    --radius:18px; --shadow:0 30px 60px -34px rgba(0,0,0,.92);
+    --num:"Space Grotesk",-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Space Grotesk","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    color:var(--ink);padding:52px 20px 90px;max-width:940px;margin:0 auto;line-height:1.65;
+    -webkit-font-smoothing:antialiased;font-feature-settings:"tnum" 1,"cv01" 1;
+    background:
+      radial-gradient(1100px 560px at 12% -12%, rgba(91,148,255,.13), transparent 58%),
+      radial-gradient(880px 520px at 108% 2%, rgba(138,123,255,.10), transparent 56%),
+      linear-gradient(170deg,#070b15,#0a1020 55%,#080d18);
+    background-attachment:fixed;position:relative;}
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+    background-image:linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);
+    background-size:46px 46px;mask-image:radial-gradient(900px 620px at 50% 0%,#000,transparent 80%);-webkit-mask-image:radial-gradient(900px 620px at 50% 0%,#000,transparent 80%);}
+  body>*{position:relative;z-index:1;}
+  h1{font-family:var(--num);font-size:30px;margin-bottom:10px;font-weight:600;letter-spacing:-.6px;line-height:1.18;
+    background:linear-gradient(96deg,#f4f8ff,#b6c6e6);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+  .ico{-webkit-text-fill-color:initial;background:none;margin-right:7px;font-size:.86em;}
+  .sub{color:var(--muted);font-size:14.5px;margin-bottom:30px;max-width:830px;line-height:1.62;text-wrap:pretty;}
+  .sub b{color:#d7e3f8;font-weight:600;}
+  .card{background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.006)),var(--card);
+    border:1px solid var(--line);border-radius:var(--radius);padding:24px;margin-bottom:20px;
+    box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.055);}
+  h2{font-size:15px;margin-bottom:9px;font-weight:650;letter-spacing:-.1px;color:#e6eefb;}
+  .hint{color:var(--muted);font-size:13px;margin-bottom:14px;line-height:1.58;}
+
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;}
+  .stat{border-radius:14px;padding:18px 20px;border:1px solid var(--line);
+    background:linear-gradient(180deg,rgba(255,255,255,.028),rgba(255,255,255,0)),#162034;transition:.25s;}
+  .stat .n{font-family:var(--num);font-size:33px;font-weight:600;line-height:1.18;letter-spacing:-.5px;font-variant-numeric:tabular-nums;}
+  .stat .d{font-size:13px;color:var(--muted);margin-top:4px;line-height:1.5;}
+  .stat.bad{background:linear-gradient(180deg,rgba(255,95,115,.16),rgba(255,95,115,.03));border-color:rgba(255,95,115,.36);} .stat.bad .n{color:var(--bad);text-shadow:0 0 26px rgba(255,95,115,.32);}
+  .stat.good{background:linear-gradient(180deg,rgba(45,210,150,.16),rgba(45,210,150,.03));border-color:rgba(45,210,150,.4);} .stat.good .n{color:var(--good);text-shadow:0 0 26px rgba(45,210,150,.32);}
+  .stat.warn{background:linear-gradient(180deg,rgba(255,190,75,.16),rgba(255,190,75,.03));border-color:rgba(255,190,75,.36);} .stat.warn .n{color:var(--amber);text-shadow:0 0 26px rgba(255,190,75,.26);}
+
+  .toggle{display:inline-flex;border:1px solid var(--line2);border-radius:12px;overflow:hidden;margin-bottom:16px;
+    background:rgba(255,255,255,.02);padding:3px;gap:3px;}
+  .toggle button{border:none;background:transparent;padding:9px 18px;font-size:13.5px;font-weight:600;cursor:pointer;color:var(--muted);transition:.18s;border-radius:9px;}
+  .toggle button:hover{color:#cfdcf2;}
+  .toggle button.on{background:linear-gradient(135deg,var(--video),var(--blue2));color:#fff;box-shadow:0 4px 14px -4px rgba(91,148,255,.6);}
+
+  .mapWrap{position:relative;width:100%;}
+  canvas{width:100%;border-radius:14px;border:1px solid var(--line2);cursor:crosshair;display:block;touch-action:none;box-shadow:0 14px 40px -16px rgba(0,0,0,.78),inset 0 0 0 1px rgba(255,255,255,.03);}
+  .axisX{display:flex;justify-content:space-between;font-family:var(--num);font-size:12px;color:var(--muted);margin-top:8px;padding:0 2px;font-variant-numeric:tabular-nums;}
+  .axisTitleX{text-align:center;font-size:13px;color:var(--muted);margin-top:5px;}
+  .mapLegend{display:flex;gap:18px;font-size:12px;color:var(--muted);flex-wrap:wrap;margin-top:14px;}
+  .sw{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-2px;}
+
+  .readout{border-radius:14px;padding:17px 19px;margin-top:16px;font-size:14px;transition:.2s;line-height:1.62;}
+  .readout.good{background:linear-gradient(180deg,rgba(45,210,150,.15),rgba(45,210,150,.03));border:1px solid rgba(45,210,150,.4);}
+  .readout.bad{background:linear-gradient(180deg,rgba(255,95,115,.15),rgba(255,95,115,.03));border:1px solid rgba(255,95,115,.36);}
+  .readout .big{font-family:var(--num);font-size:20px;font-weight:600;letter-spacing:-.3px;}
+
+  .knob{margin:16px 0;}
+  .knob .row{display:flex;align-items:center;gap:14px;}
+  .knob label{width:215px;font-size:14px;flex-shrink:0;}
+  .knob input{flex:1;-webkit-appearance:none;appearance:none;height:6px;border-radius:99px;
+    background:linear-gradient(90deg,var(--video),var(--blue2));cursor:pointer;box-shadow:0 0 0 1px rgba(255,255,255,.04) inset;}
+  .knob input::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid var(--video);box-shadow:0 2px 8px rgba(0,0,0,.6),0 0 0 5px rgba(91,148,255,.14);transition:transform .15s,box-shadow .15s;}
+  .knob input::-webkit-slider-thumb:hover{transform:scale(1.16);box-shadow:0 2px 10px rgba(0,0,0,.6),0 0 0 7px rgba(91,148,255,.18);}
+  .knob input::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid var(--video);}
+  .knob .val{width:96px;text-align:right;font-family:var(--num);font-weight:600;flex-shrink:0;font-variant-numeric:tabular-nums;color:#8fb8ff;}
+  .knob .note{font-size:12px;color:var(--dim);margin-left:229px;line-height:1.5;}
+
+  .formula{background:linear-gradient(180deg,#080d18,#0a1020);color:#dbe5f4;border:1px solid var(--line);border-radius:14px;padding:20px;font-size:13.5px;line-height:1.95;font-family:"Space Grotesk","SF Mono",ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;box-shadow:inset 0 1px 0 rgba(255,255,255,.03);}
+  .formula b{color:#8fd0ff;font-weight:600;}
+  .boss{background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,0)),#0e1626;color:var(--ink);border:1px solid var(--line2);border-radius:14px;padding:19px 21px;font-size:15px;line-height:1.8;}
+  .boss b{color:#ff9aa6;font-weight:600;}
+  footer{color:var(--dim);font-size:12px;text-align:center;margin-top:32px;line-height:1.6;}
+  .segwrap{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--line);}
+  .seggrp .lab{font-size:10.5px;color:var(--dim);letter-spacing:.3px;margin-bottom:5px;}
+  .seg{display:inline-flex;border:1px solid var(--line2);border-radius:9px;overflow:hidden;}
+  .seg button{border:none;background:transparent;color:var(--muted);padding:6px 12px;font-size:12.5px;cursor:pointer;transition:.15s;font-family:inherit;}
+  .seg button.on{background:linear-gradient(135deg,var(--video),var(--blue2));color:#fff;font-weight:700;}
+  .seg button:disabled{opacity:.3;cursor:not-allowed;text-decoration:line-through;}
+</style>
+<style id="light-skin">
+:root{
+  --bg:#eef1f7; --card:#ffffff; --card2:#f3f6fb; --ink:#16203a; --muted:#566884; --dim:#8694ad;
+  --video:#3b6fe0; --blue2:#7c5cff; --line:rgba(22,42,80,.10); --line2:rgba(22,42,80,.17);
+  --good:#12a06a; --bad:#e0455e; --amber:#bb7d00;
+}
+body{ color:var(--ink);
+  background:
+    radial-gradient(1100px 560px at 12% -12%, rgba(91,148,255,.16), transparent 60%),
+    radial-gradient(880px 520px at 108% 2%, rgba(138,123,255,.13), transparent 58%),
+    linear-gradient(170deg,#eef2f9,#e6ecf6 55%,#eef1f7); }
+body::before{ background-image:linear-gradient(rgba(22,42,80,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(22,42,80,.05) 1px,transparent 1px); }
+h1{ background:linear-gradient(96deg,#1b2744,#46587b);-webkit-background-clip:text;background-clip:text; }
+.sub b{ color:#2a3a59; }
+.card{ background:#fff; box-shadow:0 20px 44px -30px rgba(28,48,92,.32),0 1px 2px rgba(28,48,92,.05),inset 0 1px 0 rgba(255,255,255,.7); }
+h2{ color:#1d2a48; }
+.stat{ background:linear-gradient(180deg,#fbfcff,#f3f6fc); }
+.formula{ background:linear-gradient(180deg,#f6f9fd,#eef3fb);color:#27324d; }
+.formula b{ color:#2f63d8; }
+.boss{ background:#f6f9fd;color:var(--ink); }
+.boss b{ color:#d63a55; }
+.knob .val{ color:#2f63d8; }
+.toggle{ background:rgba(22,42,80,.04); }
+.toggle button:hover{ color:#26344f; }
+canvas{ box-shadow:0 16px 40px -22px rgba(28,48,92,.4),inset 0 0 0 1px rgba(22,42,80,.05); }
+</style>
+</head>
+<body>
+
+<h1><span class="ico">🗺️</span>套餐盈亏地图（口径B · 月清零 · 出金额）</h1>
+<p class="sub">每个格子 = 在那个「卖价 × 视频额度比例」下，<b>一个套餐</b>赚还是亏。<b>红=亏，绿=赚</b>。上方开关切「平均客户」和「纯视频鲸鱼」——看绿地图怎么变红。</p>
+
+<div class="card">
+  <div class="stats">
+    <div class="stat" id="stat1"><div class="n" id="s1n">--</div><div class="d" id="s1d">现实区每包利润</div></div>
+    <div class="stat warn" id="stat2"><div class="n" id="s2n">--</div><div class="d">现实区里「亏钱」的格子占比（当前视图）</div></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="toggle">
+    <button id="tAvg" class="on">看「加权平均客户」</button>
+    <button id="tWhale">看「纯视频鲸鱼」（最坏）</button>
+  </div>
+  <h2>横轴：视频卖多少钱 ｜ 纵轴：这笔钱多少比例划给视频（β）</h2>
+  <p class="hint">虚线框 = 现实区（高视频比例 β 80~95% × 卖价 ≈0.945，校准官方价）。白线 = 盈亏平衡线（鲸鱼视图下它就是 p* = β·c）。金线 = 建议价(成本×倍率)。拖动圆点看任意一点的金额。</p>
+  <div class="mapWrap"><canvas id="map" width="820" height="480"></canvas></div>
+  <div class="axisX"><span>0.50</span><span>0.78</span><span>1.05</span><span>1.33</span><span>1.60</span></div>
+  <div class="axisTitleX">→ 视频卖价（元/秒）。竖虚线：libtv 0.86 / 我们的视频成本 c</div>
+  <div class="mapLegend">
+    <span><i class="sw" style="background:#e85d5d"></i>亏钱区</span>
+    <span><i class="sw" style="background:#5fbf7f"></i>赚钱区</span>
+    <span><i class="sw" style="background:#fff;border:1px solid #999"></i>白线 = 盈亏平衡线</span>
+    <span><i class="sw" style="background:#ffc24b"></i>金线 = 建议价(成本×倍率)</span>
+    <span>纵轴上=高β（几乎全是视频，沉淀薄），下=低β</span>
+  </div>
+  <div class="readout good" id="readout"></div>
+</div>
+
+<div class="card">
+  <h2>旋钮（拧了整张地图会重画）</h2>
+  <div class="segwrap">
+    <div class="seggrp"><div class="lab">分辨率</div><div class="seg" id="segRes">
+      <button data-v="480">480P</button><button data-v="720" class="on">720P</button><button data-v="1080">1080P</button>
+    </div></div>
+    <div class="seggrp"><div class="lab">视频输入</div><div class="seg" id="segInput">
+      <button data-v="不含" class="on">不含</button><button data-v="含">含</button>
+    </div></div>
+    <div class="seggrp"><div class="lab">视频倍率（建议价用）</div><div class="row" style="gap:10px;">
+      <input type="range" id="vmk" min="100" max="300" step="5" value="150" style="width:150px;flex:none;">
+      <span class="val" id="v_vmk" style="width:54px;">150%</span>
+    </div></div>
+    <div class="seggrp"><div class="lab">图片模型（最新定价）</div><div class="seg" id="segImgModel">
+      <button data-v="gpt" class="on">phan image2</button><button data-v="nano">nano Image3Pro</button>
+    </div></div>
+    <div class="seggrp"><div class="lab">图片档位</div><div class="seg" id="segImgRes">
+      <button data-v="1k">1k</button><button data-v="2k" class="on">2k</button><button data-v="4k">4k</button>
+    </div></div>
+    <div class="seggrp"><div class="lab">图片倍率来源</div><div class="seg" id="segImgMode">
+      <button data-v="auto" class="on">按定价表</button><button data-v="manual">自己定</button>
+    </div></div>
+  </div>
+  <div class="knob"><div class="row">
+    <label>套餐价 R（元）</label>
+    <input type="range" id="R" min="49" max="2000" step="1" value="100">
+    <span class="val" id="v_R">100 元</span>
+  </div><div class="note">只影响"金额"，不影响颜色（颜色是利润率，与R无关）。</div></div>
+  <div class="knob"><div class="row">
+    <label>图片加价倍率 markup</label>
+    <input type="range" id="markup" min="100" max="300" step="5" value="200">
+    <span class="val" id="v_markup">200%</span>
+  </div><div class="note" id="imgInfo">「按定价表」时自动 = 选中图片的收费÷成本（最新表里全部=200%）；切「自己定」可手拧。图片永远赚，用不完更赚（沉淀）。</div></div>
+  <div class="knob"><div class="row">
+    <label>fast 真实成本（元/秒）</label>
+    <input type="range" id="cfast" min="0.15" max="1.05" step="0.01" value="0.63">
+    <span class="val" id="v_cfast">0.63 元</span>
+  </div><div class="note">2.0新价(0.75折)：不含视频输入0.63（现实）/含链路0.378（乐观）。注意：会员折扣不能动这个数，成本是供货商定死的。</div></div>
+  <div class="knob"><div class="row">
+    <label>掺水比例 f（掺多少 fast）</label>
+    <input type="range" id="fmix" min="0" max="80" step="1" value="20">
+    <span class="val" id="v_fmix">20%</span>
+  </div></div>
+  <div class="knob"><div class="row">
+    <label>★ 鲸鱼占比（不确定！）</label>
+    <input type="range" id="whaleShare" min="0" max="80" step="1" value="25">
+    <span class="val" id="v_whaleShare">25%</span>
+  </div><div class="note">纯视频鲸鱼在用户里的比例。拖高它，「平均视图」会肉眼变红——这就是漏洞B：鲸鱼越多，平均越被拖下水。</div></div>
+</div>
+
+<!-- 公式依据 -->
+<div class="card">
+  <h2>📐 这张图每个格子算的就是这条（公式依据）</h2>
+  <div class="formula">
+    混合成本　<b>c = f · c_fast + (1 − f) · c_std</b><br>
+    单客群利润率　<b>= β·(1 − u_v·c/p) + (1 − β)·(1 − u_i/markup)</b><br>
+    <span style="opacity:.7">　　　　　　　└ 视频半边 ┘　　　└ 图片半边 ┘</span><br>
+    平均视图色　<b>m = Σ 占比ᵢ × 单客群利润率ᵢ</b><br>
+    鲸鱼视图色　<b>m = 1 − β·c/p</b>　（u_v=1, u_i=0 代入约分）<br>
+    换成金额　<b>每包利润 = m × R</b>；&nbsp; 总利润 = m × R × N<br>
+    白&nbsp;&nbsp;线　令 m=0 解 p（鲸鱼视图即 <b>p* = β·c</b>）
+  </div>
+</div>
+
+<div class="card">
+  <div class="boss" id="bossLine"></div>
+</div>
+
+<footer>口径B：颜色=每个套餐的利润率（利润÷R，含月清零沉淀）。每格用表二公式：视频半边 β·R·(1−u_v·c/p) + 图片半边 (1−β)·R·(1−u_i/markup)，按客群占比加权。视频成本 c=掺水后混合价。数据源 PhanthyMovie收费汇总.xlsx + 盈亏测算表_两版.xlsx。依赖月清零合规（法务地基）。</footer>
+
+<script>
+let COST_STD = 1.05;            // 标准成本，随选档自动载入
+// 收费表（同两张计算器 + 地图A）
+const COST={
+  '标准':{'不含':{'480':0.4725,'720':1.05,'1080':2.49}, '含':{'480':0.2835,'720':0.6405,'1080':1.52}},
+  'fast':{'不含':{'480':0.2835,'720':0.63,'1080':null}, '含':{'480':0.17325,'720':0.378,'1080':null}}
+};
+const sel={res:'720', input:'不含'};
+// 图片定价（图片定价.xlsx：成本→收费=200%；积分=收费×100，100星钻=1元）
+const IMG={
+  'gpt':{name:'phan image2 (gpt-image)', '1k':{c:0.24,p:0.48}, '2k':{c:0.41,p:0.82}, '4k':{c:0.65,p:1.30}},
+  'nano':{name:'phan nano Image 3 Pro (gemini-3-pro)', '1k':{c:0.211843513,p:0.423687026}, '2k':{c:0.190947911,p:0.381895822}, '4k':{c:0.279273218,p:0.558546436}}
+};
+const selImg={model:'gpt', res:'2k'};
+let imgMkMode='auto';                // 'auto'=按定价表(收费/成本) / 'manual'=手拧
+const $ = id => document.getElementById(id);
+const cv = $("map"), ctx = cv.getContext("2d");
+const W = cv.width, H = cv.height;
+
+const P_MIN=0.50, P_MAX=1.60;   // 横轴 视频卖价（扩到1.60，让标准×倍率建议价可见）
+const B_MIN=0.50, B_MAX=0.98;   // 纵轴 视频额度比例 β（高在上）
+const REAL_P=[0.90,0.97], REAL_B=[0.80,0.95];   // 现实区(卖价≈0.945校准官方价)
+let view = "avg";               // avg | whale
+let dot = {p:0.945, b:0.90};    // 默认落在校准卖价 0.945
+
+const x2p = x => P_MIN + (x/W)*(P_MAX-P_MIN);
+const y2b = y => B_MAX - (y/H)*(B_MAX-B_MIN);
+const p2x = p => (p-P_MIN)/(P_MAX-P_MIN)*W;
+const b2y = b => (B_MAX-b)/(B_MAX-B_MIN)*H;
+
+function c_mix(){ const f=+$("fmix").value/100, cf=+$("cfast").value; return f*cf+(1-f)*COST_STD; }
+function imgPick(){ return IMG[selImg.model][selImg.res]; }
+function markup(){ if(imgMkMode==='auto'){ const g=imgPick(); return g.p/g.c; } return +$("markup").value/100; }
+
+// 客群：鲸鱼占比 w 决定分布，其余三类按固定比例分剩下的(1-w)
+function segs(){
+  const w=+$("whaleShare").value/100;
+  return [
+    {uv:1.00, ui:0.00, sh:w},
+    {uv:0.85, ui:0.25, sh:(1-w)*0.40},
+    {uv:0.60, ui:0.60, sh:(1-w)*0.33},
+    {uv:0.30, ui:0.15, sh:(1-w)*0.27},
+  ];
+}
+// 每包利润率（利润/R），与R无关
+function rate(p, b, c, mk, sgs){
+  if(view==="whale"){ return 1 - b*c/p; }          // 鲸鱼: u_v=1,u_i=0  → 1−β·c/p
+  let s=0;
+  for(const g of sgs){ s += g.sh*( b*(1-g.uv*c/p) + (1-b)*(1-g.ui/mk) ); }
+  return s;
+}
+
+function colorOf(m){
+  if(m>=0){ const t=Math.min(m/0.6,1);
+    return [Math.round(255-160*t), Math.round(255-64*t), Math.round(255-128*t)]; }
+  else{ const t=Math.min(-m/0.4,1);
+    return [Math.round(255-23*t), Math.round(255-162*t), Math.round(255-162*t)]; }
+}
+
+function draw(){
+  const c=c_mix(), mk=markup(), sgs=segs(), R=+$("R").value;
+  $("v_R").textContent=R+" 元";
+  // 图片倍率显示/锁定 + 最新定价信息
+  $("v_markup").textContent=Math.round(mk*100)+"%";
+  const ig=imgPick();
+  if(imgMkMode==='auto'){ $("markup").disabled=true; $("markup").value=Math.round(mk*100); }
+  else { $("markup").disabled=false; }
+  $("imgInfo").innerHTML=`图片：<b>${IMG[selImg.model].name}</b> · ${selImg.res} · 成本 ${ig.c.toFixed(3)} 收费 ${ig.p.toFixed(3)} · <b>${Math.round(ig.p*100)} 积分/张</b> · 倍率 ${Math.round(ig.p/ig.c*100)}%（${imgMkMode==='auto'?'按定价表·锁定':'自己定'}）`;
+  $("v_cfast").textContent=(+$("cfast").value).toFixed(2)+" 元";
+  $("v_fmix").textContent=$("fmix").value+"%"; $("v_whaleShare").textContent=$("whaleShare").value+"%";
+  $("v_vmk").textContent=Math.round(+$("vmk").value)+"%";
+
+  const img=ctx.createImageData(W,H);
+  let lossZone=0, totZone=0;
+  for(let y=0;y<H;y++){
+    const b=y2b(y);
+    for(let x=0;x<W;x++){
+      const p=x2p(x);
+      const m=rate(p,b,c,mk,sgs);
+      const [cr,cg,cb]=colorOf(m);
+      const idx=(y*W+x)*4;
+      img.data[idx]=cr; img.data[idx+1]=cg; img.data[idx+2]=cb; img.data[idx+3]=255;
+      if(p>=REAL_P[0]&&p<=REAL_P[1]&&b>=REAL_B[0]&&b<=REAL_B[1]){ totZone++; if(m<0) lossZone++; }
+    }
+  }
+  ctx.putImageData(img,0,0);
+
+  // 盈亏平衡白线：每一行(β)扫出 rate=0 的卖价 p
+  ctx.save(); ctx.shadowColor="rgba(0,0,0,.55)"; ctx.shadowBlur=6;
+  ctx.beginPath(); ctx.strokeStyle="#fff"; ctx.lineWidth=2.5; let started=false;
+  for(let y=0;y<=H;y+=2){
+    const b=y2b(y);
+    let found=null, prev=rate(P_MIN,b,c,mk,sgs);
+    for(let x=2;x<=W;x+=2){
+      const p=x2p(x), cur=rate(p,b,c,mk,sgs);
+      if((prev<0&&cur>=0)||(prev>=0&&cur<0)){ found=x; break; }
+      prev=cur;
+    }
+    if(found===null){ started=false; continue; }
+    started?ctx.lineTo(found,y):ctx.moveTo(found,y); started=true;
+  }
+  ctx.stroke(); ctx.restore();
+
+  // 竖虚线：libtv / 成本c / 建议价(成本×倍率)
+  const vmk=(+$("vmk").value)/100, pSug=COST_STD*vmk;
+  const vlines=[{p:0.86,label:"libtv 0.86",color:"#b29cff"},{p:c,label:"我们成本 c="+c.toFixed(3),color:"#6b7d99"},{p:pSug,label:"建议价 "+pSug.toFixed(2),color:"#ffc24b"}];
+  ctx.font="600 12px 'Space Grotesk',sans-serif"; ctx.setLineDash([6,4]); ctx.lineWidth=1.4;
+  vlines.forEach(l=>{ if(l.p<P_MIN||l.p>P_MAX) return;
+    const x=p2x(l.p); ctx.strokeStyle=l.color; ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke();
+    ctx.save(); ctx.translate(x+5,H-8); ctx.fillStyle=l.color; ctx.fillText(l.label,0,0); ctx.restore();
+  });
+  ctx.setLineDash([]);
+
+  // 现实区框
+  ctx.setLineDash([8,5]); ctx.strokeStyle="rgba(14,20,32,.82)"; ctx.lineWidth=2;
+  const zx=p2x(REAL_P[0]), zw=p2x(REAL_P[1])-zx, zy=b2y(REAL_B[1]), zh=b2y(REAL_B[0])-b2y(REAL_B[1]);
+  ctx.strokeRect(zx,zy,zw,zh); ctx.setLineDash([]);
+  ctx.fillStyle="rgba(14,20,32,.88)"; ctx.font="600 12px 'Space Grotesk',sans-serif";
+  ctx.fillText("现实区", zx+5, zy-7);
+
+  // 纵轴刻度
+  ctx.fillStyle="rgba(18,24,38,.6)"; ctx.font="600 11px 'Space Grotesk',sans-serif";
+  for(let b=0.5;b<=0.98;b+=0.1){ ctx.fillText("β="+Math.round(b*100)+"%", 8, b2y(b)+4); }
+
+  // 拖动点
+  const m=rate(dot.p,dot.b,c,mk,sgs);
+  const dx=p2x(dot.p), dy=b2y(dot.b);
+  ctx.save(); ctx.shadowColor=m<0?"rgba(220,38,38,.85)":"rgba(22,163,74,.85)"; ctx.shadowBlur=18;
+  ctx.beginPath(); ctx.arc(dx,dy,11,0,7); ctx.fillStyle=m<0?"#dc2626":"#16a34a"; ctx.fill();
+  ctx.shadowBlur=0; ctx.lineWidth=3.5; ctx.strokeStyle="#fff"; ctx.stroke(); ctx.restore();
+  ctx.font="600 13px 'Space Grotesk',sans-serif";
+  ctx.lineWidth=3; ctx.strokeStyle="rgba(255,255,255,.85)"; ctx.strokeText("你在这",dx+16,dy+5);
+  ctx.fillStyle="#10182a"; ctx.fillText("你在这",dx+16,dy+5);
+
+  // stats
+  const profit = m*R;
+  $("s1n").textContent = (profit>=0?"+":"−")+Math.abs(profit).toFixed(1)+" 元";
+  $("stat1").className = "stat "+(profit>=0?"good":"bad");
+  $("s1d").innerHTML = "你这个点：每包"+(profit>=0?"赚":"亏")+" "+Math.abs(profit).toFixed(1)+" 元（利润率 "+(m*100).toFixed(1)+"%）";
+  $("s2n").textContent = totZone? Math.round(lossZone/totZone*100)+"%" : "--";
+
+  // 拆账：沉淀(没用完→纯赚) + 消费毛利(用掉那部分)，当前点·当前视图
+  let sedR, marR;
+  if(view==="whale"){ sedR=(1-dot.b); marR=dot.b*(1-c/dot.p); }   // 鲸鱼:图片全沉淀,视频全消费
+  else { sedR=0; marR=0; for(const g of sgs){
+    sedR += g.sh*((1-g.uv)*dot.b + (1-g.ui)*(1-dot.b));
+    marR += g.sh*( g.uv*dot.b*(1-c/dot.p) + g.ui*(1-dot.b)*(1-1/mk) );
+  }}
+  const sedP=sedR*R, marP=marR*R;
+  const sedPct = profit>0 ? Math.round(sedP/profit*100) : null;
+
+  // readout
+  const pstar = dot.b*c;
+  const ro=$("readout"); ro.className="readout "+(m<0?"bad":"good");
+  const whaleRate = 1 - dot.b*c/dot.p;
+  ro.innerHTML = `<span class="big">${m<0?"💸 亏":"😄 赚"}：当前点每包${m<0?"倒贴":"净赚"} ${Math.abs(profit).toFixed(2)} 元（利润率 ${(m*100).toFixed(1)}%）</span><br>
+    位置：视频卖 <b>${dot.p.toFixed(2)} 元/秒</b>，视频额度比例 β=<b>${(dot.b*100).toFixed(0)}%</b>，视频成本 c=<b>${c.toFixed(3)}</b>。
+    鲸鱼平衡价 p*=β·c=<b>${pstar.toFixed(3)}</b> → 卖价 ${dot.p>=pstar?`高于它，<b>连纯视频鲸鱼都不亏</b>`:`<b style="color:#dc2626">低于它，纯视频鲸鱼会飘红</b>（这点鲸鱼利润率 ${(whaleRate*100).toFixed(1)}%）`}。
+    当前视图：<b>${view==="whale"?"纯视频鲸鱼（最坏）":"加权平均客户"}</b>。<br>
+    💡 拆账：沉淀(没用完→纯赚) <b style="color:#16a34a">${sedP.toFixed(1)}</b> ＋ 消费毛利 <b>${marP.toFixed(1)}</b> 元${sedPct!==null?`（<b>沉淀占 ${sedPct}%</b>——剩下没用的钱全记进利润了）`:''}。`;
+
+  // boss line
+  $("bossLine").innerHTML = `这张图回答的是<b>"一个套餐赚不赚钱"</b>，单位是元、不是率。<br><br>
+    一条线决定生死：<b>视频卖价 p 守住 p*=β·c 这条白线之上，连纯视频鲸鱼都靠自己那份图片沉淀垫平</b>；跌破它，鲸鱼开始真亏。<br>
+    现实区在<b>高 β（${REAL_B[0]*100}~${REAL_B[1]*100}%）× 卖价≈0.945（校准官方价）</b>这个角落——β 越高图片沉淀越薄、白线越往右抬，越危险。<br>
+    <b>金线 = 建议价(成本×倍率)</b>，远在右边(标准720≈1.575)：那是"不亏本引流"的稳赚价。我们却把卖价校准到 <b>0.945</b>——低于标准成本、是故意的亏本引流可乐，全靠图片爆米花和沉淀补。所以鲸鱼这条白线才是生死线。<br>
+    按一下上面「纯视频鲸鱼」开关，再把<b>鲸鱼占比</b>拖高，你会看到绿地图大片转红——<b>平均赚不代表没人亏，这就是为什么不能只看平均那个绿数字</b>。<br>
+    ★ 看 readout 那行「拆账」：在 0.945 这个亏本引流价下，<b>利润几乎 100% 来自沉淀</b>（用户充了没用完），真靠消费赚的约等于 0。所以<b>"月清零是否合规"那条法务地基，就是整个盘子的命根子</b>——沉淀一旦不让算，利润几乎全没。`;
+}
+
+// 交互
+let dragging=false;
+function setDot(e){
+  const rect=cv.getBoundingClientRect();
+  const cx=(e.touches?e.touches[0].clientX:e.clientX)-rect.left;
+  const cy=(e.touches?e.touches[0].clientY:e.clientY)-rect.top;
+  dot.p=Math.min(Math.max(x2p(cx/rect.width*W),P_MIN),P_MAX);
+  dot.b=Math.min(Math.max(y2b(cy/rect.height*H),B_MIN),B_MAX);
+  draw();
+}
+cv.addEventListener("mousedown",e=>{dragging=true;setDot(e);});
+window.addEventListener("mousemove",e=>{if(dragging)setDot(e);});
+window.addEventListener("mouseup",()=>dragging=false);
+cv.addEventListener("touchstart",e=>{dragging=true;setDot(e);e.preventDefault();},{passive:false});
+cv.addEventListener("touchmove",e=>{if(dragging){setDot(e);e.preventDefault();}},{passive:false});
+window.addEventListener("touchend",()=>dragging=false);
+
+["R","markup","cfast","fmix","whaleShare","vmk"].forEach(id=>$(id).addEventListener("input",draw));
+$("tAvg").addEventListener("click",()=>{view="avg";$("tAvg").classList.add("on");$("tWhale").classList.remove("on");draw();});
+$("tWhale").addEventListener("click",()=>{view="whale";$("tWhale").classList.add("on");$("tAvg").classList.remove("on");draw();});
+
+// —— 选档：自动载入成本（同计算器口径；1080无fast→c_fast=c_std）——
+function setSeg(gid,val){ document.querySelectorAll('#'+gid+' button').forEach(b=>b.classList.toggle('on', b.dataset.v===val)); }
+function applyPreset(){
+  const cs=COST['标准'][sel.input][sel.res];
+  const cf=COST['fast'][sel.input][sel.res];
+  COST_STD=cs;
+  $("cfast").value=(cf!=null)?cf:cs;
+  draw();
+}
+['segRes','segInput'].forEach(gid=>{
+  document.querySelectorAll('#'+gid+' button').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const key = gid==='segRes'?'res':'input';
+      sel[key]=btn.dataset.v; setSeg(gid,btn.dataset.v); applyPreset();
+    });
+  });
+});
+// 图片模型 / 档位 / 倍率来源
+['segImgModel','segImgRes'].forEach(gid=>{
+  document.querySelectorAll('#'+gid+' button').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const key = gid==='segImgModel'?'model':'res';
+      selImg[key]=btn.dataset.v; setSeg(gid,btn.dataset.v); draw();
+    });
+  });
+});
+document.querySelectorAll('#segImgMode button').forEach(btn=>{
+  btn.addEventListener('click',()=>{ imgMkMode=btn.dataset.v; setSeg('segImgMode',btn.dataset.v); draw(); });
+});
+applyPreset();
+</script>
+</body>
+</html>

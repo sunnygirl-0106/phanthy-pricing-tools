@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PhanthyMovie 运营定价工具箱</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#070b15; --card:#0f1726; --ink:#eef3fc; --sub:#9aabc6; --dim:#647391;
+    --blue:#5b94ff; --blue2:#8a7bff;
+    --line:rgba(255,255,255,.07); --line2:rgba(255,255,255,.13);
+    --num:"Space Grotesk",-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;overflow:hidden;}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Space Grotesk","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    color:var(--ink);display:flex;flex-direction:column;
+    background:linear-gradient(170deg,#070b15,#0a1020 55%,#080d18);
+    -webkit-font-smoothing:antialiased;}
+
+  /* 顶部导航 */
+  .topbar{flex:none;padding:14px 20px 0;position:relative;z-index:10;
+    background:linear-gradient(180deg,rgba(15,23,38,.98),rgba(15,23,38,.92));
+    border-bottom:1px solid var(--line2);
+    backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);}
+  .topbar h1{font-family:var(--num);font-size:20px;font-weight:600;letter-spacing:-.4px;margin-bottom:12px;
+    background:linear-gradient(96deg,#f4f8ff,#b6c6e6);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+
+  /* 两级标签 */
+  .groups{display:flex;gap:6px;}
+  .group{position:relative;}
+  .group-label{font-size:10px;color:var(--dim);letter-spacing:1.2px;text-transform:uppercase;font-weight:600;margin-bottom:5px;padding-left:4px;}
+  .tabs{display:flex;gap:3px;}
+  .tab{border:none;background:transparent;color:var(--sub);padding:8px 16px;font-size:13px;cursor:pointer;
+    border-radius:10px 10px 0 0;transition:.18s;font-family:inherit;font-weight:500;white-space:nowrap;
+    border:1px solid transparent;border-bottom:none;}
+  .tab:hover{color:#cfdcf2;background:rgba(255,255,255,.04);}
+  .tab.on{background:linear-gradient(180deg,rgba(91,148,255,.14),rgba(91,148,255,.04));
+    color:#fff;font-weight:600;border-color:var(--line2);
+    box-shadow:0 -2px 12px -4px rgba(91,148,255,.3);}
+  .tab .icon{margin-right:5px;font-size:12px;}
+  .divider{width:1px;background:var(--line2);margin:4px 12px;align-self:stretch;}
+
+  /* 内容区 iframe */
+  .content{flex:1;position:relative;overflow:hidden;}
+  .content iframe{position:absolute;inset:0;width:100%;height:100%;border:none;background:var(--bg);}
+  .content iframe.hidden{display:none;}
+
+  /* 移动端适配 */
+  @media(max-width:680px){
+    .topbar{padding:10px 12px 0;}
+    .topbar h1{font-size:16px;margin-bottom:8px;}
+    .tab{padding:6px 10px;font-size:11.5px;}
+    .divider{margin:4px 6px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>PhanthyMovie 运营定价工具箱</h1>
+  <div class="groups">
+    <div class="group">
+      <div class="group-label">口径A · 掺水单点</div>
+      <div class="tabs">
+        <button class="tab on" data-page="0"><span class="icon">🧮</span>掺水压价计算器</button>
+        <button class="tab" data-page="1"><span class="icon">🗺️</span>掺水定价地图</button>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="group">
+      <div class="group-label">口径B · 套餐月清零</div>
+      <div class="tabs">
+        <button class="tab" data-page="2"><span class="icon">🧮</span>套餐盈亏测算器</button>
+        <button class="tab" data-page="3"><span class="icon">🗺️</span>套餐盈亏地图</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="content" id="content"></div>
+
+<script>
+// 页面源文件名（相对路径 / 也可以用 textarea 内嵌）
+const PAGE_FILES = [
+  '掺水压价计算器 (1).html',
+  '掺水定价地图_口径A (1).html',
+  '套餐分布盈亏测算器 (1).html',
+  '套餐盈亏地图_口径B (1).html'
+];
+
+const content = document.getElementById('content');
+const tabs = document.querySelectorAll('.tab');
+const iframes = [];
+let current = -1;
+
+// 为每个页面创建一个 iframe（懒加载：首次切换时才设置 src）
+PAGE_FILES.forEach((file, i) => {
+  const iframe = document.createElement('iframe');
+  iframe.className = 'hidden';
+  iframe.dataset.src = file;
+  iframe.dataset.loaded = '0';
+  content.appendChild(iframe);
+  iframes.push(iframe);
+});
+
+function switchTo(idx) {
+  if (idx === current) return;
+  current = idx;
+  tabs.forEach(t => t.classList.toggle('on', +t.dataset.page === idx));
+  iframes.forEach((f, i) => {
+    if (i === idx) {
+      f.classList.remove('hidden');
+      if (f.dataset.loaded === '0') {
+        f.src = f.dataset.src;
+        f.dataset.loaded = '1';
+      }
+    } else {
+      f.classList.add('hidden');
+    }
+  });
+}
+
+tabs.forEach(t => t.addEventListener('click', () => switchTo(+t.dataset.page)));
+
+// 默认显示第一个
+switchTo(0);
+</script>
+</body>
+</html>

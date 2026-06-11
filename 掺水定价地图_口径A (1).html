@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PhanthyMovie 掺水定价地图 · 口径A</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#070b15; --card:#0f1726; --card2:#16203400; --ink:#eef3fc; --muted:#9aabc6; --dim:#647391;
+    --video:#5b94ff; --blue2:#8a7bff; --line:rgba(255,255,255,.07); --line2:rgba(255,255,255,.13);
+    --good:#3ddc97; --bad:#ff6f81; --amber:#ffc24b;
+    --radius:18px; --shadow:0 30px 60px -34px rgba(0,0,0,.92);
+    --num:"Space Grotesk",-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Space Grotesk","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    color:var(--ink);padding:52px 20px 90px;max-width:940px;margin:0 auto;line-height:1.65;
+    -webkit-font-smoothing:antialiased;font-feature-settings:"tnum" 1,"cv01" 1;
+    background:
+      radial-gradient(1100px 560px at 12% -12%, rgba(91,148,255,.13), transparent 58%),
+      radial-gradient(880px 520px at 108% 2%, rgba(138,123,255,.10), transparent 56%),
+      linear-gradient(170deg,#070b15,#0a1020 55%,#080d18);
+    background-attachment:fixed;position:relative;}
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+    background-image:linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);
+    background-size:46px 46px;mask-image:radial-gradient(900px 620px at 50% 0%,#000,transparent 80%);-webkit-mask-image:radial-gradient(900px 620px at 50% 0%,#000,transparent 80%);}
+  body>*{position:relative;z-index:1;}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:11.5px;font-weight:600;letter-spacing:1.6px;
+    text-transform:uppercase;color:#8fb0e8;margin-bottom:14px;padding:5px 12px 5px 10px;border-radius:99px;
+    background:rgba(91,148,255,.09);border:1px solid rgba(124,160,255,.22);}
+  .eyebrow::before{content:"";width:6px;height:6px;border-radius:50%;background:linear-gradient(135deg,var(--video),var(--blue2));box-shadow:0 0 10px rgba(91,148,255,.9);}
+  h1{font-family:var(--num);font-size:30px;margin-bottom:10px;font-weight:600;letter-spacing:-.6px;line-height:1.18;
+    background:linear-gradient(96deg,#f4f8ff,#b6c6e6);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+  .ico{-webkit-text-fill-color:initial;background:none;margin-right:7px;font-size:.86em;}
+  .sub{color:var(--muted);font-size:14.5px;margin-bottom:30px;max-width:810px;line-height:1.62;text-wrap:pretty;}
+  .sub b{color:#d7e3f8;font-weight:600;}
+  .card{background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.006)),var(--card);
+    border:1px solid var(--line);border-radius:var(--radius);padding:24px;margin-bottom:20px;
+    box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.055);}
+  h2{font-size:15px;margin-bottom:9px;font-weight:650;letter-spacing:-.1px;color:#e6eefb;}
+  .hint{color:var(--muted);font-size:13px;margin-bottom:14px;line-height:1.58;}
+
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;}
+  .stat{border-radius:14px;padding:18px 20px;border:1px solid var(--line);
+    background:linear-gradient(180deg,rgba(255,255,255,.028),rgba(255,255,255,0)),#162034;transition:.25s;}
+  .stat .n{font-family:var(--num);font-size:33px;font-weight:600;line-height:1.18;letter-spacing:-.5px;font-variant-numeric:tabular-nums;}
+  .stat .d{font-size:13px;color:var(--muted);margin-top:4px;line-height:1.5;}
+  .stat.bad{background:linear-gradient(180deg,rgba(255,95,115,.16),rgba(255,95,115,.03));border-color:rgba(255,95,115,.36);} .stat.bad .n{color:var(--bad);text-shadow:0 0 26px rgba(255,95,115,.32);}
+  .stat.good{background:linear-gradient(180deg,rgba(45,210,150,.16),rgba(45,210,150,.03));border-color:rgba(45,210,150,.4);} .stat.good .n{color:var(--good);text-shadow:0 0 26px rgba(45,210,150,.32);}
+  .stat.warn{background:linear-gradient(180deg,rgba(255,190,75,.16),rgba(255,190,75,.03));border-color:rgba(255,190,75,.36);} .stat.warn .n{color:var(--amber);text-shadow:0 0 26px rgba(255,190,75,.26);}
+
+  .mapWrap{position:relative;width:100%;}
+  canvas{width:100%;border-radius:14px;border:1px solid var(--line2);cursor:crosshair;display:block;touch-action:none;box-shadow:0 14px 40px -16px rgba(0,0,0,.78),inset 0 0 0 1px rgba(255,255,255,.03);}
+  .axisX{display:flex;justify-content:space-between;font-family:var(--num);font-size:12px;color:var(--muted);margin-top:8px;padding:0 2px;font-variant-numeric:tabular-nums;}
+  .axisTitleX{text-align:center;font-size:13px;color:var(--muted);margin-top:5px;}
+  .mapLegend{display:flex;gap:18px;font-size:12px;color:var(--muted);flex-wrap:wrap;margin-top:14px;}
+  .sw{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-2px;}
+
+  .readout{border-radius:14px;padding:17px 19px;margin-top:16px;font-size:14px;transition:.2s;line-height:1.62;}
+  .readout.good{background:linear-gradient(180deg,rgba(45,210,150,.15),rgba(45,210,150,.03));border:1px solid rgba(45,210,150,.4);}
+  .readout.bad{background:linear-gradient(180deg,rgba(255,95,115,.15),rgba(255,95,115,.03));border:1px solid rgba(255,95,115,.36);}
+  .readout .big{font-family:var(--num);font-size:20px;font-weight:600;letter-spacing:-.3px;}
+
+  .knob{margin:16px 0;}
+  .knob .row{display:flex;align-items:center;gap:14px;}
+  .knob label{width:215px;font-size:14px;flex-shrink:0;}
+  .knob input{flex:1;-webkit-appearance:none;appearance:none;height:6px;border-radius:99px;
+    background:linear-gradient(90deg,var(--video),var(--blue2));cursor:pointer;box-shadow:0 0 0 1px rgba(255,255,255,.04) inset;}
+  .knob input::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid var(--video);box-shadow:0 2px 8px rgba(0,0,0,.6),0 0 0 5px rgba(91,148,255,.14);transition:transform .15s,box-shadow .15s;}
+  .knob input::-webkit-slider-thumb:hover{transform:scale(1.16);box-shadow:0 2px 10px rgba(0,0,0,.6),0 0 0 7px rgba(91,148,255,.18);}
+  .knob input::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid var(--video);}
+  .knob .val{width:96px;text-align:right;font-family:var(--num);font-weight:600;flex-shrink:0;font-variant-numeric:tabular-nums;color:#8fb8ff;}
+  .knob .note{font-size:12px;color:var(--dim);margin-left:229px;line-height:1.5;}
+
+  .formula{background:linear-gradient(180deg,#080d18,#0a1020);color:#dbe5f4;border:1px solid var(--line);border-radius:14px;padding:20px;font-size:13.5px;line-height:1.95;font-family:"Space Grotesk","SF Mono",ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;box-shadow:inset 0 1px 0 rgba(255,255,255,.03);}
+  .formula b{color:#8fd0ff;font-weight:600;}
+  .boss{background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,0)),#0e1626;color:var(--ink);border:1px solid var(--line2);border-radius:14px;padding:19px 21px;font-size:15px;line-height:1.8;}
+  .boss b{color:#ff9aa6;font-weight:600;}
+  footer{color:var(--dim);font-size:12px;text-align:center;margin-top:32px;line-height:1.6;}
+  .segwrap{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--line);}
+  .seggrp .lab{font-size:10.5px;color:var(--dim);letter-spacing:.3px;margin-bottom:5px;}
+  .seg{display:inline-flex;border:1px solid var(--line2);border-radius:9px;overflow:hidden;}
+  .seg button{border:none;background:transparent;color:var(--muted);padding:6px 12px;font-size:12.5px;cursor:pointer;transition:.15s;font-family:inherit;}
+  .seg button.on{background:linear-gradient(135deg,var(--video),var(--blue2));color:#fff;font-weight:700;}
+  .seg button:disabled{opacity:.3;cursor:not-allowed;text-decoration:line-through;}
+</style>
+<style id="light-skin">
+:root{
+  --bg:#eef1f7; --card:#ffffff; --card2:#f3f6fb; --ink:#16203a; --muted:#566884; --dim:#8694ad;
+  --video:#3b6fe0; --blue2:#7c5cff; --line:rgba(22,42,80,.10); --line2:rgba(22,42,80,.17);
+  --good:#12a06a; --bad:#e0455e; --amber:#bb7d00;
+}
+body{ color:var(--ink);
+  background:
+    radial-gradient(1100px 560px at 12% -12%, rgba(91,148,255,.16), transparent 60%),
+    radial-gradient(880px 520px at 108% 2%, rgba(138,123,255,.13), transparent 58%),
+    linear-gradient(170deg,#eef2f9,#e6ecf6 55%,#eef1f7); }
+body::before{ background-image:linear-gradient(rgba(22,42,80,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(22,42,80,.05) 1px,transparent 1px); }
+h1{ background:linear-gradient(96deg,#1b2744,#46587b);-webkit-background-clip:text;background-clip:text; }
+.sub b{ color:#2a3a59; }
+.card{ background:#fff; box-shadow:0 20px 44px -30px rgba(28,48,92,.32),0 1px 2px rgba(28,48,92,.05),inset 0 1px 0 rgba(255,255,255,.7); }
+h2{ color:#1d2a48; }
+.stat{ background:linear-gradient(180deg,#fbfcff,#f3f6fc); }
+.formula{ background:linear-gradient(180deg,#f6f9fd,#eef3fb);color:#27324d; }
+.formula b{ color:#2f63d8; }
+.boss{ background:#f6f9fd;color:var(--ink); }
+.boss b{ color:#d63a55; }
+.knob .val{ color:#2f63d8; }
+canvas{ box-shadow:0 16px 40px -22px rgba(28,48,92,.4),inset 0 0 0 1px rgba(22,42,80,.05); }
+</style>
+</head>
+<body>
+
+<h1><span class="ico">🗺️</span>掺水定价地图（口径A · 一秒账）</h1>
+<p class="sub">最简单的视角：<b>卖一秒视频，赚还是亏</b>。不管时间、不管套餐、不管什么客户——你只管选个卖价、选个掺水比例，看是红是绿。<b>红=亏，绿=赚</b>。</p>
+
+<div class="card">
+  <div class="stats">
+    <div class="stat" id="stat1"><div class="n" id="s1n">--</div><div class="d" id="s1d">你这点每秒毛利</div></div>
+    <div class="stat warn" id="stat2"><div class="n" id="s2n">--</div><div class="d">是否在「甜区」（既比 libtv 便宜，又不亏）</div></div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>横轴：视频卖多少钱 ｜ 纵轴：掺多少便宜的 fast</h2>
+  <p class="hint">白线 = 盈亏平衡线（卖价=成本）。白线右边=赚。竖紫线 libtv=0.86，落在它左边才比竞品便宜。两线之间的绿区 = 甜区。拖圆点试任意定价。</p>
+  <div class="mapWrap"><canvas id="map" width="820" height="460"></canvas></div>
+  <div class="axisX"><span>0.50</span><span>0.78</span><span>1.05</span><span>1.33</span><span>1.60</span></div>
+  <div class="axisTitleX">→ 视频卖价（元/秒）</div>
+  <div class="mapLegend">
+    <span><i class="sw" style="background:#e85d5d"></i>亏钱区</span>
+    <span><i class="sw" style="background:#5fbf7f"></i>赚钱区</span>
+    <span><i class="sw" style="background:#fff;border:1px solid #999"></i>白线 = 平衡线(卖价=成本)</span>
+    <span><i class="sw" style="background:#ffc24b"></i>金线 = 建议价(成本×倍率)</span>
+    <span>纵轴上=掺水多→成本低</span>
+  </div>
+  <div class="readout good" id="readout"></div>
+</div>
+
+<div class="card">
+  <h2>旋钮（成本，拧了整张地图重画）</h2>
+  <div class="segwrap">
+    <div class="seggrp"><div class="lab">分辨率</div><div class="seg" id="segRes">
+      <button data-v="480">480P</button><button data-v="720" class="on">720P</button><button data-v="1080">1080P</button>
+    </div></div>
+    <div class="seggrp"><div class="lab">视频输入</div><div class="seg" id="segInput">
+      <button data-v="不含" class="on">不含</button><button data-v="含">含</button>
+    </div></div>
+  </div>
+  <div class="knob"><div class="row">
+    <label>视频标准成本 c_std（元/秒）</label>
+    <input type="range" id="cstd" min="0.20" max="2.60" step="0.01" value="1.05">
+    <span class="val" id="v_cstd">1.05 元</span>
+  </div><div class="note">随上面选档自动载入。seedance2.0 720P=1.05；1080P=2.49。</div></div>
+  <div class="knob"><div class="row">
+    <label>fast 真实成本 c_fast（元/秒）</label>
+    <input type="range" id="cfast" min="0.15" max="1.05" step="0.01" value="0.63">
+    <span class="val" id="v_cfast">0.63 元</span>
+  </div><div class="note">随选档自动载入。2.0新价(0.75折)：720不含0.63。1080P 无 fast→等于 c_std，掺水无效。</div></div>
+  <div class="knob"><div class="row">
+    <label>视频倍率（建议价 = 成本×倍率）</label>
+    <input type="range" id="vmk" min="100" max="300" step="5" value="150">
+    <span class="val" id="v_vmk">150%</span>
+  </div><div class="note">金色竖线 = 标准成本 × 此倍率 = 报价。它永远在白线(成本)右边，落在绿区——按规矩卖就稳赚。</div></div>
+</div>
+
+<!-- 整盘·多档销量加权（与计算器A同源） -->
+<div class="card">
+  <h2>📊 整盘 · 多档销量加权（老板自己填销量）</h2>
+  <p class="hint">单看一档不够。真实盘子 = <b>各分辨率利润 × 销量占比</b>，加权平均。每档卖价按「该档标准成本 × 视频倍率」自动算；<b>掺水比例取你在地图上拖的那个点</b>（当前 <b id="wFnote">20%</b>，上下拖动点即变），倍率取上面「视频倍率」，含/不含取上面选档。你只要把<b>销量占比</b>填进去。</p>
+  <table style="width:100%;border-collapse:collapse;font-size:13px;">
+    <thead>
+      <tr style="color:var(--muted);font-size:12px;">
+        <th style="text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);">分辨率</th>
+        <th style="padding:10px 8px;border-bottom:1px solid var(--line);">销量占比 %</th>
+        <th style="padding:10px 8px;border-bottom:1px solid var(--line);">卖价 p<br><small style="color:var(--dim)">成本×倍率</small></th>
+        <th style="padding:10px 8px;border-bottom:1px solid var(--line);">真实成本 c<br><small style="color:var(--dim)">含掺水</small></th>
+        <th style="padding:10px 8px;border-bottom:1px solid var(--line);">每秒毛利</th>
+        <th style="padding:10px 8px;border-bottom:1px solid var(--line);">毛利率</th>
+      </tr>
+    </thead>
+    <tbody id="wBody"></tbody>
+    <tfoot>
+      <tr style="font-weight:700;">
+        <td style="text-align:left;padding:13px 8px;border-top:1px solid var(--line2);">整盘加权</td>
+        <td id="wSumShare" style="padding:13px 8px;border-top:1px solid var(--line2);text-align:center;">100%</td>
+        <td style="padding:13px 8px;border-top:1px solid var(--line2);text-align:center;">—</td>
+        <td style="padding:13px 8px;border-top:1px solid var(--line2);text-align:center;">—</td>
+        <td id="wSumM" style="padding:13px 8px;border-top:1px solid var(--line2);text-align:center;">—</td>
+        <td id="wSumMr" style="padding:13px 8px;border-top:1px solid var(--line2);text-align:center;">—</td>
+      </tr>
+    </tfoot>
+  </table>
+  <div id="wShareWarn" style="color:var(--amber);font-size:12px;margin-top:8px;"></div>
+  <div id="wVerdict" style="margin-top:14px;border-radius:13px;padding:14px 16px;font-size:14px;line-height:1.55;">…</div>
+  <div class="hint" style="margin-top:10px;color:var(--dim);font-size:11.5px;">占比合计不必凑成 100%，下方按权重折算。1080P 没有 fast、掺不了水，毛利率天生比掺水档低，但只要倍率≥100% 仍是赚的。</div>
+</div>
+
+<!-- 公式依据 -->
+<div class="card">
+  <h2>📐 这张图每个格子算的就是这条（公式依据）</h2>
+  <div class="formula">
+    混合成本　<b>c = f · c_fast + (1 − f) · c_std</b><br>
+    格子颜色　<b>m = 1 − c / p</b>　（每秒毛利率，&lt;0红 &gt;0绿）<br>
+    每秒毛利　<b>= p − c</b>　（元）<br>
+    白&nbsp;&nbsp;线　令 m=0 → <b>p* = c</b>　（卖价=成本）<br>
+    甜&nbsp;&nbsp;区　<b>c &lt; p &lt; 0.86</b>　（既不亏又比libtv便宜，需c压到0.86下）
+  </div>
+</div>
+
+<div class="card">
+  <div class="boss" id="bossLine"></div>
+</div>
+
+<footer>口径A：颜色=每秒视频毛利率（已实现口径，不含套餐月清零/沉淀）。详见「地图公式说明.md」。数据源 PhanthyMovie收费汇总.xlsx。</footer>
+
+<script>
+const $ = id => document.getElementById(id);
+const cv = $("map"), ctx = cv.getContext("2d");
+const W = cv.width, H = cv.height;
+const P_MIN=0.50, P_MAX=1.60;   // 横轴 卖价
+const F_MIN=0.00, F_MAX=0.80;   // 纵轴 掺水比例（高在上）
+const LIBTV=0.86;
+let dot={p:0.945, f:0.20};      // 默认落在校准卖价 0.945
+// 收费表（同两张计算器）
+const COST={
+  '标准':{'不含':{'480':0.4725,'720':1.05,'1080':2.49}, '含':{'480':0.2835,'720':0.6405,'1080':1.52}},
+  'fast':{'不含':{'480':0.2835,'720':0.63,'1080':null}, '含':{'480':0.17325,'720':0.378,'1080':null}}
+};
+const sel={res:'720', input:'不含'};
+
+const x2p=x=>P_MIN+(x/W)*(P_MAX-P_MIN);
+const y2f=y=>F_MAX-(y/H)*(F_MAX-F_MIN);
+const p2x=p=>(p-P_MIN)/(P_MAX-P_MIN)*W;
+const f2y=f=>(F_MAX-f)/(F_MAX-F_MIN)*H;
+
+function cost(f){ return f*(+$("cfast").value)+(1-f)*(+$("cstd").value); }
+function margin(p,f){ return 1 - cost(f)/p; }
+
+function colorOf(m){
+  if(m>=0){ const t=Math.min(m/0.5,1);
+    return [Math.round(255-160*t),Math.round(255-64*t),Math.round(255-128*t)]; }
+  else{ const t=Math.min(-m/0.6,1);
+    return [Math.round(255-23*t),Math.round(255-162*t),Math.round(255-162*t)]; }
+}
+
+function draw(){
+  $("v_cstd").textContent=(+$("cstd").value).toFixed(2)+" 元";
+  $("v_cfast").textContent=(+$("cfast").value).toFixed(2)+" 元";
+  $("v_vmk").textContent=Math.round(+$("vmk").value)+"%";
+
+  const im=ctx.createImageData(W,H);
+  for(let y=0;y<H;y++){ const f=y2f(y);
+    for(let x=0;x<W;x++){ const p=x2p(x);
+      const m=margin(p,f); const [r,g,b]=colorOf(m); const i=(y*W+x)*4;
+      im.data[i]=r; im.data[i+1]=g; im.data[i+2]=b; im.data[i+3]=255;
+    }}
+  ctx.putImageData(im,0,0);
+
+  // 白线 p*=c(f)
+  ctx.save(); ctx.shadowColor="rgba(0,0,0,.55)"; ctx.shadowBlur=6;
+  ctx.beginPath(); ctx.strokeStyle="#fff"; ctx.lineWidth=2.5; let st=false;
+  for(let y=0;y<=H;y+=2){ const f=y2f(y), ps=cost(f);
+    if(ps<P_MIN||ps>P_MAX){ st=false; continue; }
+    const x=p2x(ps); st?ctx.lineTo(x,y):ctx.moveTo(x,y); st=true; }
+  ctx.stroke(); ctx.restore();
+
+  // libtv 竖线
+  ctx.setLineDash([6,4]); ctx.lineWidth=1.4; ctx.strokeStyle="#b29cff";
+  const lx=p2x(LIBTV); ctx.beginPath(); ctx.moveTo(lx,0); ctx.lineTo(lx,H); ctx.stroke();
+  ctx.setLineDash([]); ctx.fillStyle="#c9bbff"; ctx.font="600 12px 'Space Grotesk',sans-serif";
+  ctx.fillText("libtv 0.86", lx+5, 17);
+
+  // 建议价金线 = 标准成本 × 倍率（待办#6：当前档×倍率竖线）
+  const vmk=(+$("vmk").value)/100;
+  const pSug=(+$("cstd").value)*vmk;
+  if(pSug>=P_MIN&&pSug<=P_MAX){
+    ctx.setLineDash([5,4]); ctx.lineWidth=2.2; ctx.strokeStyle="#ffc24b";
+    const gx=p2x(pSug); ctx.beginPath(); ctx.moveTo(gx,0); ctx.lineTo(gx,H); ctx.stroke();
+    ctx.setLineDash([]); ctx.fillStyle="#ffd98a"; ctx.font="600 12px 'Space Grotesk',sans-serif";
+    ctx.fillText("建议价 "+pSug.toFixed(2), gx+5, 34);
+  }
+
+  // 纵轴刻度
+  ctx.fillStyle="rgba(20,26,40,.62)"; ctx.font="600 11px 'Space Grotesk',sans-serif";
+  for(let f=0;f<=0.8;f+=0.2){ ctx.fillText("掺"+Math.round(f*100)+"%", 8, f2y(f)+4); }
+
+  // 拖动点
+  const m=margin(dot.p,dot.f), c=cost(dot.f);
+  const dx=p2x(dot.p), dy=f2y(dot.f);
+  ctx.save(); ctx.shadowColor=m<0?"rgba(220,38,38,.85)":"rgba(22,163,74,.85)"; ctx.shadowBlur=18;
+  ctx.beginPath(); ctx.arc(dx,dy,11,0,7); ctx.fillStyle=m<0?"#dc2626":"#16a34a"; ctx.fill();
+  ctx.shadowBlur=0; ctx.lineWidth=3.5; ctx.strokeStyle="#fff"; ctx.stroke(); ctx.restore();
+  ctx.font="600 13px 'Space Grotesk',sans-serif";
+  ctx.lineWidth=3; ctx.strokeStyle="rgba(255,255,255,.85)"; ctx.strokeText("你在这",dx+16,dy+5);
+  ctx.fillStyle="#10182a"; ctx.fillText("你在这",dx+16,dy+5);
+
+  // stats
+  const perSec=dot.p-c, sweet=(m>=0&&dot.p<LIBTV);
+  $("s1n").textContent=(perSec>=0?"+":"−")+Math.abs(perSec).toFixed(3)+" 元";
+  $("stat1").className="stat "+(perSec>=0?"good":"bad");
+  $("s1d").innerHTML="你这点每秒"+(perSec>=0?"赚":"亏")+" "+Math.abs(perSec).toFixed(3)+" 元（毛利率 "+(m*100).toFixed(1)+"%）";
+  $("s2n").textContent=sweet?"✓ 在甜区":"✗ 不在";
+  $("stat2").className="stat "+(sweet?"good":"warn");
+
+  // readout
+  const ro=$("readout"); ro.className="readout "+(m<0?"bad":"good");
+  ro.innerHTML=`<span class="big">${m<0?"💸 亏":"😄 赚"}：卖一秒${m<0?"倒贴":"净赚"} ${Math.abs(perSec).toFixed(3)} 元（毛利率 ${(m*100).toFixed(1)}%）</span><br>
+    位置：卖价 <b>${dot.p.toFixed(2)}</b>，掺水 <b>${(dot.f*100).toFixed(0)}%</b> → 混合成本 c=<b>${c.toFixed(3)}</b>。
+    ${dot.p<LIBTV?`比 libtv 便宜 ✅`:`比 libtv 贵 ❌`}，${m>=0?`不亏 ✅`:`亏 ❌`}。
+    ${(m>=0&&dot.p<LIBTV)?`<b>在甜区：既便宜又赚。</b>`:(m<0?`要不亏，卖价得 ≥ ${c.toFixed(2)}（或多掺水把成本压下来）。`:`赚是赚，但没比 libtv 便宜；想压价就多掺水。`)}`;
+
+  // boss line
+  const cNow=cost(dot.f);
+  $("bossLine").innerHTML=`这张图只回答一件事：<b>卖一秒视频赚不赚</b>，最干净、几乎全是定数。<br><br>
+    白线就是成本线(卖价=成本)。<b>想又便宜又赚，得让成本压到 libtv 的 0.86 以下</b>——也就是白线得跑到紫线左边,中间那块绿才是甜区。
+    现在掺 ${(dot.f*100).toFixed(0)}% 时成本 ${cNow.toFixed(3)}，${cNow<LIBTV?`已经在 0.86 下,甜区存在 ✅`:`还在 0.86 上,光靠这点掺水做不到"又便宜又赚",得多掺水或压底价 ❌`}。<br><br>
+    <b>金线 = 建议价(成本×倍率)</b>：按规矩卖，它永远在白线右边、稳赚——红区只在你把卖价拖到白线左边(亏本引流打 libtv)时才进。校准卖价 0.945 介于二者之间：低于标准成本、靠掺水和爆米花补。`;
+
+  // 整盘·多档销量加权（同计算器A）
+  renderWeighted();
+}
+
+// —— 整盘·多档销量加权（与计算器A同源；掺水取拖动点 dot.f，倍率取 vmk，含/不含取选档）——
+const salesMix={'480':30,'720':50,'1080':20};
+let wRows=[];
+const f3=x=>x.toFixed(3);
+function renderWeighted(){
+  const body=$('wBody'); if(!body) return;
+  body.innerHTML=''; wRows=[];
+  const f=dot.f, vmk=(+$('vmk').value)/100;
+  $('wFnote').textContent=Math.round(f*100)+'%';
+  const resList=['480','720','1080'], names={'480':'480P','720':'720P','1080':'1080P'};
+  resList.forEach(res=>{
+    const cstd=COST['标准'][sel.input][res];
+    const cfastV=COST['fast'][sel.input][res];
+    const hasFast=cfastV!=null;
+    const c = hasFast ? (f*cfastV+(1-f)*cstd) : cstd;   // 真实成本：标准掺水；1080无fast则纯标准
+    const p = cstd*vmk;                                 // 报价 = 标准成本 × 倍率
+    const m=p-c, mr=1-c/p;
+    wRows.push({res,m,mr});
+    const sh=salesMix[res]||0;
+    const cell='padding:10px 8px;border-bottom:1px solid var(--line);text-align:center;';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td style="text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);font-weight:600;">${names[res]}${hasFast?'':' <small style="color:var(--dim)">无fast</small>'}</td>
+      <td style="padding:8px;border-bottom:1px solid var(--line);text-align:center;"><input data-res="${res}" type="number" value="${sh}" min="0" max="100" style="width:62px;background:var(--card2);border:1px solid var(--line2);color:var(--ink);border-radius:8px;padding:6px 8px;text-align:right;font-family:var(--num);"></td>
+      <td style="${cell}">${f3(p)}</td>
+      <td style="${cell}">${f3(c)}</td>
+      <td style="${cell}color:${m>=0?'var(--good)':'var(--bad)'};">${(m>=0?'+':'−')+Math.abs(m).toFixed(3)}</td>
+      <td style="${cell}color:${mr>=0?'var(--good)':'var(--bad)'};">${(mr>=0?'+':'−')+Math.abs(mr*100).toFixed(1)+'%'}</td>`;
+    body.appendChild(tr);
+  });
+  body.querySelectorAll('input').forEach(inp=>{
+    inp.addEventListener('input',()=>{ salesMix[inp.dataset.res]=+inp.value||0; recalcW(); });
+  });
+  recalcW();
+}
+function recalcW(){
+  let wM=0,wMr=0,sumSh=0;
+  wRows.forEach(r=>{ const sh=salesMix[r.res]||0; sumSh+=sh; wM+=sh*r.m; wMr+=sh*r.mr; });
+  const shFrac=sumSh/100; if(shFrac>0){ wM/=shFrac; wMr/=shFrac; }
+  $('wSumShare').textContent=sumSh+'%';
+  $('wSumM').innerHTML=`<span style="color:${wM>=0?'var(--good)':'var(--bad)'}">${(wM>=0?'+':'−')+Math.abs(wM).toFixed(3)}</span>`;
+  $('wSumMr').innerHTML=`<span style="color:${wMr>=0?'var(--good)':'var(--bad)'}">${(wMr>=0?'+':'−')+Math.abs(wMr*100).toFixed(1)+'%'}</span>`;
+  $('wShareWarn').textContent=(Math.round(sumSh)===100||sumSh===0)?'':`⚠️ 占比合计 ${sumSh}%≠100%，已自动按权重折算，请核对是否漏填。`;
+  const vd=$('wVerdict');
+  if(wMr>=0){ vd.style.background='linear-gradient(180deg,rgba(45,210,150,.15),rgba(45,210,150,.03))'; vd.style.border='1px solid var(--good)';
+    vd.innerHTML=`✅ 整盘加权每秒毛利 +${wM.toFixed(3)} 元（毛利率 ${(wMr*100).toFixed(1)}%）。按当前销量结构与倍率，<b>整盘是赚的</b>。改占比、或上下拖掺水点，看哪种结构最肥。`; }
+  else { vd.style.background='linear-gradient(180deg,rgba(255,95,115,.15),rgba(255,95,115,.03))'; vd.style.border='1px solid var(--bad)';
+    vd.innerHTML=`❌ 整盘加权每秒亏 ${Math.abs(wM).toFixed(3)} 元（毛利率 ${(wMr*100).toFixed(1)}%）。当前倍率盖不住成本——提倍率、或多卖掺水档（480/720）。`; }
+}
+
+let dragging=false;
+function setDot(e){
+  const rect=cv.getBoundingClientRect();
+  const cx=(e.touches?e.touches[0].clientX:e.clientX)-rect.left;
+  const cy=(e.touches?e.touches[0].clientY:e.clientY)-rect.top;
+  dot.p=Math.min(Math.max(x2p(cx/rect.width*W),P_MIN),P_MAX);
+  dot.f=Math.min(Math.max(y2f(cy/rect.height*H),F_MIN),F_MAX);
+  draw();
+}
+cv.addEventListener("mousedown",e=>{dragging=true;setDot(e);});
+window.addEventListener("mousemove",e=>{if(dragging)setDot(e);});
+window.addEventListener("mouseup",()=>dragging=false);
+cv.addEventListener("touchstart",e=>{dragging=true;setDot(e);e.preventDefault();},{passive:false});
+cv.addEventListener("touchmove",e=>{if(dragging){setDot(e);e.preventDefault();}},{passive:false});
+window.addEventListener("touchend",()=>dragging=false);
+["cstd","cfast","vmk"].forEach(id=>$(id).addEventListener("input",draw));
+
+// —— 选档：自动载入成本（同计算器口径；标准为基，1080无fast→c_fast=c_std）——
+function setSeg(gid,val){ document.querySelectorAll('#'+gid+' button').forEach(b=>b.classList.toggle('on', b.dataset.v===val)); }
+function applyPreset(){
+  const cs=COST['标准'][sel.input][sel.res];
+  const cf=COST['fast'][sel.input][sel.res];
+  $("cstd").value=cs;
+  $("cfast").value=(cf!=null)?cf:cs;
+  draw();
+}
+['segRes','segInput'].forEach(gid=>{
+  document.querySelectorAll('#'+gid+' button').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const key = gid==='segRes'?'res':'input';
+      sel[key]=btn.dataset.v; setSeg(gid,btn.dataset.v); applyPreset();
+    });
+  });
+});
+applyPreset();
+</script>
+</body>
+</html>
